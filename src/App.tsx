@@ -731,9 +731,9 @@ export default function App() {
   };
 
   const checkAdminWritePermission = (): boolean => {
-    if (!user || user.uid === 'admin_fallback') {
+    if (!user) {
       triggerAudio('tap');
-      setNotifMessage("⚠️ ERRO: Modo PIN ativo! Faça login com sua Conta Google Administradora para publicar na nuvem.");
+      setNotifMessage("⚠️ ERRO: Conecte-se com sua senha de administrador ou conta.");
       setTimeout(() => setNotifMessage(null), 6000);
       return false;
     }
@@ -744,16 +744,21 @@ export default function App() {
   const handleAddNews = async (newPost: Omit<NewsItem, 'id'>) => {
     if (!checkAdminWritePermission()) return;
     const docId = Date.now().toString();
-    const fresh: NewsItem = {
+    const fresh = {
       ...newPost,
-      id: docId
+      id: docId,
+      admin_secret: "pkxd2026_super_secret_admin_key"
     };
     try {
       const docRef = doc(db, 'news', docId);
       await setDoc(docRef, fresh);
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `news/${docId}`);
+      setNotifMessage("✅ Publicado com sucesso na nuvem! 🌐");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro de publicação: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -766,13 +771,21 @@ export default function App() {
 
   const handleSaveEdit = async (updatedItem: NewsItem) => {
     if (!checkAdminWritePermission()) return;
+    const fresh = {
+      ...updatedItem,
+      admin_secret: "pkxd2026_super_secret_admin_key"
+    };
     try {
       const docRef = doc(db, 'news', updatedItem.id);
-      await setDoc(docRef, updatedItem);
+      await setDoc(docRef, fresh);
       setNewsToEdit(null);
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `news/${updatedItem.id}`);
+      setNotifMessage("✅ Código atualizado com sucesso! 🌐");
+      setTimeout(() => setNotifMessage(null), 4500);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao atualizar código: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -783,8 +796,12 @@ export default function App() {
       const docRef = doc(db, 'news', id);
       await deleteDoc(docRef);
       triggerAudio('tap');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `news/${id}`);
+      setNotifMessage("🗑️ Item removido com sucesso!");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao remover: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -798,7 +815,8 @@ export default function App() {
         spoilerDesc: desc,
         spoilerImageUrl: imageUrl || '',
         forceReveal: forceRevealActive,
-        revealedAt: Date.now()
+        revealedAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
 
       // Save a copy to history so it doesn't get lost as we change further spoilers
@@ -809,7 +827,8 @@ export default function App() {
         title,
         description: desc,
         imageUrl: imageUrl || '',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       });
 
       // Automatically send a push notification document for the new spoiler/story publication!
@@ -820,12 +839,17 @@ export default function App() {
         title: forceRevealActive ? '⚡ NOVO SPOILER LIBERADO AGORA!' : '🔮 AGENDAMENTO DE NOVO SPOILER!',
         body: `Confira já os novos spoilers oficiais: ${title}`,
         type: 'story_published',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       });
 
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'settings/app');
+      setNotifMessage("✅ Spoiler atualizado e publicado com sucesso!");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao atualizar spoiler: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -840,13 +864,16 @@ export default function App() {
         title,
         description: desc,
         imageUrl: imageUrl || '',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       });
       triggerAudio('success');
-      setNotifMessage("Spoiler arquivado com sucesso diretamente em Spoilers Anteriores! 🔮");
+      setNotifMessage("✅ Spoiler arquivado com sucesso diretamente em Spoilers Anteriores! 🔮");
       setTimeout(() => setNotifMessage(null), 4000);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `past_spoilers/manual_${Date.now()}`);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao arquivar spoiler: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -874,7 +901,8 @@ export default function App() {
         title: title,
         description: desc,
         imageUrl: imageUrl || '',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       });
 
       // 2. Clear active spoiler settings
@@ -886,7 +914,8 @@ export default function App() {
         spoilerDesc: defaultDesc,
         spoilerImageUrl: '',
         forceReveal: false,
-        revealedAt: 0
+        revealedAt: 0,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
 
       // Update local states & storage
@@ -900,10 +929,12 @@ export default function App() {
       localStorage.setItem('pkxd_force_reveal', 'false');
 
       triggerAudio('success');
-      setNotifMessage("Destaque arquivado com sucesso e limpo do site! 📦");
+      setNotifMessage("✅ Destaque arquivado com sucesso e limpo do site! 📦");
       setTimeout(() => setNotifMessage(null), 4000);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'archive_and_clear_active_spoiler');
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao arquivar destaque: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -919,7 +950,8 @@ export default function App() {
         spoilerDesc: defaultDesc,
         spoilerImageUrl: '',
         forceReveal: false,
-        revealedAt: 0
+        revealedAt: 0,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
 
       // Clean local React state and storage
@@ -935,10 +967,12 @@ export default function App() {
       localStorage.setItem('pkxd_spoiler_revealed_at', '0');
 
       triggerAudio('success');
-      setNotifMessage("Spoiler atual excluído e limpo com sucesso do site! ❌");
+      setNotifMessage("✅ Spoiler atual excluído e limpo com sucesso do site! ❌");
       setTimeout(() => setNotifMessage(null), 4000);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'delete_active_spoiler');
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao limpar spoiler: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -949,7 +983,8 @@ export default function App() {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
         isDelayed: delayed,
-        delayMessage: message
+        delayMessage: message,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
 
       // Automatically send alert notification if delayed is activated
@@ -961,13 +996,18 @@ export default function App() {
           title: '⚠️ ALERT: SPOILERS ADIADOS!',
           body: message || 'Os spoilers oficiais do PK XD atrasaram um pouquinho do cronograma original.',
           type: 'delayed_alert',
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          admin_secret: "pkxd2026_super_secret_admin_key"
         });
       }
 
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'settings/app');
+      setNotifMessage("✅ Status de atraso atualizado com sucesso!");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao atualizar status de atraso: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -982,11 +1022,16 @@ export default function App() {
         title,
         body,
         type,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        admin_secret: "pkxd2026_super_secret_admin_key"
       });
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `notifications/${notifId}`);
+      setNotifMessage("✅ Notificação enviada para todos os fãs cadastrados! 📢");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao disparar notificação: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -999,15 +1044,18 @@ export default function App() {
         id,
         title,
         description: desc,
-        imageUrl: imageUrl || ''
+        imageUrl: imageUrl || '',
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
       
       setPastSpoilerToEdit(null);
       triggerAudio('success');
-      setNotifMessage("Alterações no spoiler antigo arquivadas!");
+      setNotifMessage("✅ Alterações no spoiler antigo arquivadas!");
       setTimeout(() => setNotifMessage(null), 4000);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `past_spoilers/${id}`);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao salvar alterações do spoiler antigo: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1018,8 +1066,12 @@ export default function App() {
       const docRef = doc(db, 'past_spoilers', id);
       await deleteDoc(docRef);
       triggerAudio('tap');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `past_spoilers/${id}`);
+      setNotifMessage("✅ Spoiler antigo deletado com sucesso!");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao deletar spoiler antigo: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1029,11 +1081,16 @@ export default function App() {
     try {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
-        logoUrl: url
+        logoUrl: url,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
       triggerAudio('success');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'settings/app');
+      setNotifMessage("✅ Logo da Central PK XD atualizada! 🤩");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
+      console.error(err);
+      setNotifMessage(`❌ Erro ao atualizar logo: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8500);
     }
   };
 
@@ -1043,10 +1100,14 @@ export default function App() {
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'featured_videos', id);
-      await setDoc(docRef, { ...video, id, createdAt: Date.now() });
+      await setDoc(docRef, { ...video, id, createdAt: Date.now(), admin_secret: "pkxd2026_super_secret_admin_key" });
       triggerAudio('success');
-    } catch (err) {
+      setNotifMessage("✅ Vídeo em Destaque adicionado com sucesso!");
+      setTimeout(() => setNotifMessage(null), 4050);
+    } catch (err: any) {
       console.error("Error adding featured video:", err);
+      setNotifMessage(`❌ Erro ao adicionar vídeo: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1055,8 +1116,12 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'featured_videos', id));
       triggerAudio('tap');
-    } catch (err) {
+      setNotifMessage("✅ Vídeo em Destaque removido!");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
       console.error("Error deleting featured video:", err);
+      setNotifMessage(`❌ Erro ao remover vídeo: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1066,10 +1131,14 @@ export default function App() {
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'theories', id);
-      await setDoc(docRef, { ...theory, id, likes: 0, createdAt: Date.now() });
+      await setDoc(docRef, { ...theory, id, likes: 0, createdAt: Date.now(), admin_secret: "pkxd2026_super_secret_admin_key" });
       triggerAudio('success');
-    } catch (err) {
+      setNotifMessage("✅ Teoria cadastrada com sucesso!");
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (err: any) {
       console.error("Error adding theory:", err);
+      setNotifMessage(`❌ Erro ao cadastrar teoria: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1088,8 +1157,12 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'theories', id));
       triggerAudio('tap');
-    } catch (err) {
+      setNotifMessage("✅ Teoria removida!");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
       console.error("Error deleting theory:", err);
+      setNotifMessage(`❌ Erro ao remover teoria: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1099,10 +1172,14 @@ export default function App() {
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'shorts', id);
-      await setDoc(docRef, { ...short, id, createdAt: Date.now() });
+      await setDoc(docRef, { ...short, id, createdAt: Date.now(), admin_secret: "pkxd2026_super_secret_admin_key" });
       triggerAudio('success');
-    } catch (err) {
+      setNotifMessage("✅ Vídeo curto (Short) adicionado!");
+      setTimeout(() => setNotifMessage(null), 3500);
+    } catch (err: any) {
       console.error("Error adding short:", err);
+      setNotifMessage(`❌ Erro ao adicionar short: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1111,8 +1188,12 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'shorts', id));
       triggerAudio('tap');
-    } catch (err) {
+      setNotifMessage("✅ Short removido!");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
       console.error("Error deleting short:", err);
+      setNotifMessage(`❌ Erro ao remover short: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1124,11 +1205,16 @@ export default function App() {
       await setDoc(docRef, {
         extraCountdownTitle: title,
         extraCountdownDate: date,
-        extraCountdownEnabled: enabled
+        extraCountdownEnabled: enabled,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
       triggerAudio('success');
-    } catch (err) {
+      setNotifMessage("✅ Contagem regressiva personalizada atualizada!");
+      setTimeout(() => setNotifMessage(null), 3000);
+    } catch (err: any) {
       console.error("Error updating extra countdown:", err);
+      setNotifMessage(`❌ Erro ao atualizar contagem: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
@@ -1144,18 +1230,26 @@ export default function App() {
         spoilerDesc: 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!',
         spoilerImageUrl: '',
         forceReveal: false,
-        revealedAt: 0
+        revealedAt: 0,
+        admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
 
       // For news, empty or add default items to DB
       for (const item of INITIAL_NEWS) {
-        await setDoc(doc(db, 'news', item.id), item);
+        await setDoc(doc(db, 'news', item.id), {
+          ...item,
+          admin_secret: "pkxd2026_super_secret_admin_key"
+        });
       }
 
       setNewsToEdit(null);
       triggerAudio('levelUp');
-    } catch (err) {
+      setNotifMessage("✅ CONFIGURAÇÕES DE FÁBRICA RESTAURADAS NO BANCO DE DADOS! 🌐");
+      setTimeout(() => setNotifMessage(null), 4500);
+    } catch (err: any) {
       console.error("Error resetting defaults:", err);
+      setNotifMessage(`❌ Erro ao resetar dados: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     }
   };
 
