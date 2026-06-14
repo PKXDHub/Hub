@@ -4,6 +4,18 @@ import { playTapSound, playSuccessSound, playLevelUpSound } from '../utils/audio
 import { collection, doc, setDoc, onSnapshot, query, limit } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 
+const maskEmail = (email?: string | null): string => {
+  if (!email) return '';
+  const parts = email.split('@');
+  if (parts.length !== 2) return email;
+  const local = parts[0];
+  const domain = parts[1];
+  if (local.length <= 3) {
+    return `${local.slice(0, 1)}***@${domain}`;
+  }
+  return `${local.slice(0, 3)}***@${domain}`;
+};
+
 interface FanLevelSectionProps {
   level: number;
   onLevelUp: () => void;
@@ -536,7 +548,7 @@ export default function FanLevelSection({
               <span>Sua conta de fã está ativa! ✅</span>
             </h4>
             <p className="text-xs text-gray-300 leading-normal">
-              Autenticado com sucesso como <strong className="text-emerald-300 font-mono underline">{user.email}</strong>. Suas conquistas, níveis e fogo diário diário estão sincronizados em tempo real do fã-clube.
+              Autenticado com sucesso como <strong className="text-emerald-300 font-mono underline">{maskEmail(user.email)}</strong>. Suas conquistas, níveis e fogo diário diário estão sincronizados em tempo real do fã-clube.
             </p>
           </div>
           <button

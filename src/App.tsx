@@ -39,6 +39,18 @@ import { auth, db, googleProvider, OperationType, handleFirestoreError } from '.
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, User, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 
+export const maskEmail = (email?: string | null): string => {
+  if (!email) return '';
+  const parts = email.split('@');
+  if (parts.length !== 2) return email;
+  const local = parts[0];
+  const domain = parts[1];
+  if (local.length <= 3) {
+    return `${local.slice(0, 1)}***@${domain}`;
+  }
+  return `${local.slice(0, 3)}***@${domain}`;
+};
+
 export default function App() {
   const [newsList, setNewsList] = useState<NewsItem[]>(() => {
     try {
@@ -260,7 +272,7 @@ export default function App() {
         if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
           errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados no seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
         } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
-          errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
+          errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
         }
         setGoogleAuthError(errorMsg);
       });
@@ -484,7 +496,8 @@ export default function App() {
                 title: '⏰ CONTAGEM REGRESSIVA!',
                 body: messageBody,
                 type: 'countdown_alert',
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                admin_secret: "pkxd2026_super_secret_admin_key"
               });
               localStorage.setItem(`last_notif_${notificationKey}`, todayStr);
             } catch (e) {
@@ -604,7 +617,7 @@ export default function App() {
       if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
         errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados nas configurações do seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
       } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
-        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
+        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
       }
       setGoogleAuthError(errorMsg);
     } finally {
@@ -627,7 +640,7 @@ export default function App() {
       if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
         errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados nas configurações do seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
       } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
-        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
+        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
       }
       setGoogleAuthError(errorMsg);
       setIsAuthenticating(false);
@@ -655,6 +668,8 @@ export default function App() {
         errMsg = 'Muitas tentativas malsucedidas. Tente novamente mais tarde ou redefina sua senha.';
       }
       setGoogleAuthError(`Erro de Login: ${errMsg}`);
+      setNotifMessage(`❌ Erro de Login: ${errMsg}`);
+      setTimeout(() => setNotifMessage(null), 8000);
     } finally {
       setIsAuthenticating(false);
     }
@@ -686,6 +701,8 @@ export default function App() {
         errMsg = 'O login com E-mail e Senha não está ativado nas configurações do Authentication (Sign-in methods) do seu Firebase Console. Por favor, ative-o lá!';
       }
       setGoogleAuthError(`Erro ao criar conta: ${errMsg}`);
+      setNotifMessage(`❌ Erro ao criar conta: ${errMsg}`);
+      setTimeout(() => setNotifMessage(null), 8500);
     } finally {
       setIsAuthenticating(false);
     }
@@ -1561,7 +1578,7 @@ export default function App() {
                         ⚠️ Conta de Fã Detectada!
                       </p>
                       <p>
-                        Você está autenticado como leitor de email <span className="font-mono text-white underline">{user.email}</span>, mas seu usuário não possui permissão de escrita de administrador no sistema. 
+                        Você está autenticado como leitor de email <span className="font-mono text-white underline">{maskEmail(user.email)}</span>, mas seu usuário não possui permissão de escrita de administrador no sistema. 
                       </p>
                       <p className="text-gray-400">
                         Se você for o proprietário deste portal, por favor faça login com o endereço de email do Administrador PK XD Central correspondente.
@@ -1640,14 +1657,14 @@ export default function App() {
                                 LOGIN COM CONTA ADMINISTRADORA REAL
                               </h5>
                               <p className="text-[10px] text-zinc-400 leading-normal pl-0.5">
-                                Conecte-se com seu e-mail do Firebase (ex: kawanyuri35@gmail.com) para obter token real. Isso habilita sincronização na nuvem oficial para todo fã-clube!
+                                Conecte-se com seu e-mail do Firebase para obter token real. Isso habilita sincronização na nuvem oficial para todo fã-clube!
                               </p>
                             </div>
                             <div className="space-y-2.5">
                               <input
                                 type="email"
                                 required
-                                placeholder="E-mail do Administrador (ex: kawanyuri35@gmail.com)"
+                                placeholder="E-mail do Administrador"
                                 value={adminEmail}
                                 onChange={(e) => setAdminEmail(e.target.value)}
                                 className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-indigo-500 transition-all font-mono"
@@ -1739,7 +1756,7 @@ export default function App() {
                               {googleAuthError}
                             </p>
                             <p className="text-[11px] text-indigo-400 font-sans leading-relaxed mt-1">
-                              💡 <strong>Caso use E-mail/Senha:</strong> Registre-se primeiro no formulário na seção <strong>"Fã Level"</strong> abaixo usando seu e-mail de admin (kawanyuri35@gmail.com). Depois, faça o login dele aqui no painel usando e-mail e senha correspondentes!
+                              💡 <strong>Caso use E-mail/Senha:</strong> Registre-se primeiro no formulário na seção <strong>"Fã Level"</strong> abaixo usando seu e-mail de admin cadastrado. Depois, faça o login dele aqui no painel usando e-mail e senha correspondentes!
                             </p>
                           </div>
                         )}
