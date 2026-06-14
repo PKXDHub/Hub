@@ -170,49 +170,64 @@ export default function App() {
   useEffect(() => {
     const settingsRef = doc(db, 'settings', 'app');
     const unsubscribe = onSnapshot(settingsRef, (snapshot) => {
+      const defaultTitle = 'Aguardando Próximos Spoilers! 🔮';
+      const defaultDesc = 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!';
+
       if (snapshot.exists()) {
         const data = snapshot.data();
-        if (data.spoilerTitle) {
-          setSpoilerTitle(data.spoilerTitle);
-          localStorage.setItem('pkxd_spoiler_title', data.spoilerTitle);
-        }
-        if (data.spoilerDesc) {
-          setSpoilerDesc(data.spoilerDesc);
-          localStorage.setItem('pkxd_spoiler_desc', data.spoilerDesc);
-        }
-        if (data.spoilerImageUrl !== undefined) {
-          setSpoilerImage(data.spoilerImageUrl);
-          localStorage.setItem('pkxd_spoiler_image', data.spoilerImageUrl);
-        }
-        if (data.logoUrl !== undefined) {
-          setSiteLogoUrl(data.logoUrl);
-          localStorage.setItem('pkxd_site_logo_url', data.logoUrl);
-        }
-        if (data.forceReveal !== undefined) {
-          setForceReveal(data.forceReveal);
-          localStorage.setItem('pkxd_force_reveal', data.forceReveal ? 'true' : 'false');
-        }
-        if (data.revealedAt !== undefined) {
-          setRevealedAt(data.revealedAt);
-          localStorage.setItem('pkxd_spoiler_revealed_at', String(data.revealedAt));
-        }
+        
+        // Use default if undefined/null/empty string to avoid getting stuck in a falsy stale local state
+        const titleVal = (data.spoilerTitle !== undefined && data.spoilerTitle !== null) ? data.spoilerTitle : defaultTitle;
+        setSpoilerTitle(titleVal);
+        localStorage.setItem('pkxd_spoiler_title', titleVal);
+
+        const descVal = (data.spoilerDesc !== undefined && data.spoilerDesc !== null) ? data.spoilerDesc : defaultDesc;
+        setSpoilerDesc(descVal);
+        localStorage.setItem('pkxd_spoiler_desc', descVal);
+
+        const imgVal = (data.spoilerImageUrl !== undefined && data.spoilerImageUrl !== null) ? data.spoilerImageUrl : '';
+        setSpoilerImage(imgVal);
+        localStorage.setItem('pkxd_spoiler_image', imgVal);
+
+        const logoVal = data.logoUrl !== undefined ? data.logoUrl : '';
+        setSiteLogoUrl(logoVal);
+        localStorage.setItem('pkxd_site_logo_url', logoVal);
+
+        const forceVal = data.forceReveal !== undefined ? data.forceReveal : false;
+        setForceReveal(forceVal);
+        localStorage.setItem('pkxd_force_reveal', forceVal ? 'true' : 'false');
+
+        const revealedVal = data.revealedAt !== undefined ? data.revealedAt : 0;
+        setRevealedAt(revealedVal);
+        localStorage.setItem('pkxd_spoiler_revealed_at', String(revealedVal));
+
         // Extra/Alternative Countdown
-        if (data.extraCountdownTitle !== undefined) {
-          setExtraCountdownTitle(data.extraCountdownTitle);
-        }
-        if (data.extraCountdownDate !== undefined) {
-          setExtraCountdownDate(data.extraCountdownDate);
-        }
-        if (data.extraCountdownEnabled !== undefined) {
-          setExtraCountdownEnabled(data.extraCountdownEnabled);
-        }
+        setExtraCountdownTitle(data.extraCountdownTitle !== undefined ? data.extraCountdownTitle : '');
+        setExtraCountdownDate(data.extraCountdownDate !== undefined ? data.extraCountdownDate : '');
+        setExtraCountdownEnabled(data.extraCountdownEnabled !== undefined ? data.extraCountdownEnabled : false);
+
         // Delayed Alerts
-        if (data.isDelayed !== undefined) {
-          setIsDelayed(data.isDelayed);
-        }
-        if (data.delayMessage !== undefined) {
-          setDelayMessage(data.delayMessage);
-        }
+        setIsDelayed(data.isDelayed !== undefined ? data.isDelayed : false);
+        setDelayMessage(data.delayMessage !== undefined ? data.delayMessage : '');
+      } else {
+        // Document does not exist or has been deleted - fallback to defaults immediately
+        setSpoilerTitle(defaultTitle);
+        localStorage.setItem('pkxd_spoiler_title', defaultTitle);
+        setSpoilerDesc(defaultDesc);
+        localStorage.setItem('pkxd_spoiler_desc', defaultDesc);
+        setSpoilerImage('');
+        localStorage.setItem('pkxd_spoiler_image', '');
+        setSiteLogoUrl('');
+        localStorage.setItem('pkxd_site_logo_url', '');
+        setForceReveal(false);
+        localStorage.setItem('pkxd_force_reveal', 'false');
+        setRevealedAt(0);
+        localStorage.setItem('pkxd_spoiler_revealed_at', '0');
+        setExtraCountdownTitle('');
+        setExtraCountdownDate('');
+        setExtraCountdownEnabled(false);
+        setIsDelayed(false);
+        setDelayMessage('');
       }
     }, (error) => {
       console.warn("Could not fetch real-time settings:", error);
@@ -972,14 +987,14 @@ export default function App() {
                 triggerAudio('tap');
                 setShowAdminPanel(!showAdminPanel);
               }}
-              className={`p-2.5 px-4.5 rounded-2xl border font-sans text-[11px] font-black tracking-wide uppercase transition-all duration-150 cursor-pointer flex items-center gap-1.5 shadow-md ${
+              className={`p-2.5 px-3 sm:px-4.5 rounded-2xl border font-sans text-[11px] font-black tracking-wide uppercase transition-all duration-150 cursor-pointer flex items-center gap-1.5 shadow-md ${
                 showAdminPanel 
                   ? 'bg-yellow-400 text-purple-950 border-yellow-250' 
                   : 'bg-purple-800 text-gray-150 border-purple-500/50 hover:bg-purple-900'
               }`}
             >
               <Settings className={`w-3.5 h-3.5 ${showAdminPanel ? 'animate-spin' : ''}`} />
-              <span>{showAdminPanel ? 'Fechar Panel' : 'Modo Admin'}</span>
+              <span className="hidden sm:inline">{showAdminPanel ? 'Fechar Painel' : 'Modo Admin'}</span>
             </button>
           </div>
 
@@ -1384,8 +1399,8 @@ export default function App() {
             }}
           />
 
-          <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-sm animate-slide-in">
+          <div className="absolute inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
+            <div className="w-screen max-w-xs sm:max-w-sm animate-slide-in">
               <div className="h-full flex flex-col bg-slate-900 border-l border-white/10 shadow-2xl relative overflow-y-auto">
                 {/* Drawer Header */}
                 <div className="p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950">
@@ -1547,15 +1562,15 @@ export default function App() {
                 setIsNotifOverlayOpen(false);
                 triggerAudio('tap');
               }}
-              className="absolute top-4 right-4 bg-white/10 hover:bg-white/15 text-white font-sans font-black text-xs uppercase p-2 py-3 rounded-lg border border-white/10 transition-all cursor-pointer shadow-md duration-150"
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/15 text-white font-sans font-black text-xs uppercase p-2 py-2.5 rounded-lg border border-white/10 transition-all cursor-pointer shadow-md duration-150"
             >
               Fechar ✕
             </button>
 
             {/* Header Title */}
-            <div className="flex items-center gap-2 text-cyan-400 mb-5 pb-3 border-b border-white/10">
-              <BellRing className="w-5 h-5 animate-swing text-cyan-400 fill-cyan-400" />
-              <h3 className="font-sans font-black text-lg uppercase tracking-wide text-white">Central de Alertas e Notificações</h3>
+            <div className="flex items-center gap-2 text-cyan-400 mb-5 pb-3 border-b border-white/10 pr-16 sm:pr-0">
+              <BellRing className="w-5 h-5 animate-swing text-cyan-400 fill-cyan-400 flex-shrink-0" />
+              <h3 className="font-sans font-black text-sm sm:text-lg uppercase tracking-wide text-white">Central de Alertas</h3>
             </div>
 
             {/* Native browser/mobile alert toggle card */}

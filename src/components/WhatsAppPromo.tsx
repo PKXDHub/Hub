@@ -150,11 +150,11 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleJoinClick}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-black font-sans font-black text-base sm:text-lg rounded-2xl border-b-4 border-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(16,185,129,0.4)] active:translate-y-1 active:border-b-0 cursor-pointer flex items-center justify-center gap-3 group"
+                className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-black font-sans font-black text-sm sm:text-lg rounded-2xl border-b-4 border-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(16,185,129,0.4)] active:translate-y-1 active:border-b-0 cursor-pointer flex flex-wrap items-center justify-center gap-2 group text-center"
               >
-                <MessageSquare className="w-5 h-5 fill-black" />
-                <span>ENTRAR NO CANAL AGORA</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+                <MessageSquare className="w-5 h-5 fill-black flex-shrink-0" />
+                <span className="break-words">ENTRAR NO CANAL AGORA</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform flex-shrink-0" />
               </button>
 
               <button
@@ -167,7 +167,7 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
                     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Acesse o canal de Spoilers e Códigos Oficiais de PK XD: ' + channelUrl)}`, '_blank');
                   }
                 }}
-                className="w-full sm:w-auto px-6 py-4 bg-zinc-900 hover:bg-zinc-850 text-emerald-400 font-sans font-black text-sm rounded-2xl border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-3 sm:py-4 bg-zinc-900 hover:bg-zinc-850 text-emerald-400 font-sans font-black text-xs sm:text-sm rounded-2xl border border-emerald-500/30 transition-all flex flex-wrap items-center justify-center gap-2 cursor-pointer text-center"
               >
                 <span>🔗 COMPARTILHAR CANAL</span>
               </button>

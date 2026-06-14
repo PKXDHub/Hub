@@ -151,11 +151,11 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
         <div className="pt-2 text-center">
           <button
             onClick={handleRedeemClick}
-            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-400 to-yellow-400 text-black font-sans font-black text-sm sm:text-base rounded-2xl border-b-4 border-amber-700 shadow-[0_8px_16px_rgba(245,158,11,0.2)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(245,158,11,0.3)] active:translate-y-1 active:border-b-0 cursor-pointer flex items-center justify-center gap-2.5 mx-auto"
+            className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-400 to-yellow-400 text-black font-sans font-black text-xs sm:text-sm md:text-base rounded-2xl border-b-4 border-amber-700 shadow-[0_8px_16px_rgba(245,158,11,0.2)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(245,158,11,0.3)] active:translate-y-1 active:border-b-0 cursor-pointer flex flex-wrap items-center justify-center gap-2 mx-auto text-center"
           >
-            <Ticket className="w-5 h-5 fill-black" />
-            <span>IR PARA O PORTAL DE RESGATE OFICIAL PK XD</span>
-            <ExternalLink className="w-4 h-4" />
+            <Ticket className="w-5 h-5 fill-black flex-shrink-0" />
+            <span className="break-words">IR PARA O PORTAL DE RESGATE OFICIAL PK XD</span>
+            <ExternalLink className="w-4 h-4 flex-shrink-0" />
           </button>
           <p className="font-mono text-[9px] text-amber-400 uppercase tracking-widest mt-2 block">
             *Redirecionamento Oficial: app.playpkxd.com/promo-code

@@ -51,10 +51,10 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
         </div>
 
         {/* Filter buttons */}
-        <div className="flex gap-2 bg-black/30 p-1.5 rounded-xl border border-white/5 self-start sm:self-center">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 bg-black/30 p-1 rounded-xl border border-white/5 self-start sm:self-center">
           <button
             onClick={() => { playTapSound(); setActiveType('all'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all uppercase cursor-pointer ${
               activeType === 'all' ? 'bg-indigo-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -62,7 +62,7 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
           </button>
           <button
             onClick={() => { playTapSound(); setActiveType('game_highlight'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all uppercase cursor-pointer ${
               activeType === 'game_highlight' ? 'bg-indigo-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -70,7 +70,7 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
           </button>
           <button
             onClick={() => { playTapSound(); setActiveType('panel_video'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all uppercase cursor-pointer ${
               activeType === 'panel_video' ? 'bg-indigo-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'
             }`}
           >

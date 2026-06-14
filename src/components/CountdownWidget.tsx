@@ -184,6 +184,7 @@ export default function CountdownWidget({
 
     const normTitle = (spoilerTitle || '').toLowerCase().trim();
     const isNoActiveSpoiler = !spoilerTitle || 
+      !normTitle ||
       normTitle === 'aguardando próximos spoilers! 🔮' || 
       normTitle === 'aguardando proximos spoilers! 🔮' ||
       normTitle.includes('aguardando') || 
