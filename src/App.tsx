@@ -1648,7 +1648,7 @@ export default function App() {
                               setAdminAuthTab('email');
                               setGoogleAuthError(null);
                             }}
-                            className={`flex-1 py-12 px-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            className={`flex-1 py-2.5 px-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                               adminAuthTab === 'email' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
                             }`}
                           >

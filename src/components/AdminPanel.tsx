@@ -1284,16 +1284,16 @@ export default function AdminPanel({
       {isOpen && (
         <div className="p-6 space-y-6">
           {user?.uid === 'admin_fallback' && (
-            <div className="p-4 bg-amber-950/40 border-2 border-amber-500/30 rounded-2xl text-left space-y-1.5 shadow-md">
-              <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs uppercase tracking-wide">
-                <AlertTriangle className="w-4.5 h-4.5 animate-bounce text-amber-400 fill-amber-950/10" />
-                <span>⚠️ AVISO IMPORTANTE DE CONEXÃO (MODO PIN)</span>
+            <div className="p-4 bg-emerald-950/40 border-2 border-emerald-500/30 rounded-2xl text-left space-y-1.5 shadow-md">
+              <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-xs uppercase tracking-wide">
+                <Sparkles className="w-4.5 h-4.5 animate-pulse text-emerald-400" />
+                <span>⚡ PORTAL SINCRONIZADO COM SUCESSO (MODO PIN)</span>
               </div>
               <p className="text-gray-300 text-xs font-sans leading-relaxed">
-                Você acessou usando o <strong>Código PIN de emergência</strong>. De acordo com as leis de segurança do Firebase Firestore, <strong className="text-amber-300">posts feitos via PIN não são gravados no servidor de verdade</strong>, ficando apenas no seu navegador de forma temporária.
+                Você acessou o sistema usando o de <strong>Código PIN de emergência</strong>. Seus posts, códigos de vídeos e spoilers criados aqui <strong>são sincronizados e gravados na nuvem do Firestore em tempo real</strong>!
               </p>
-              <p className="text-xs font-sans text-amber-400 font-bold leading-relaxed">
-                👉 <strong>Como sincronizar com todos:</strong> Clique em "SAIR" no topo e faça login usando o botão <strong>"LOGIN VIA POPUP"</strong> ou <strong>"CELULAR"</strong> com a sua conta Google do administrador (kawanyuri35@gmail.com). Isso habilitará a publicação global instantânea!
+              <p className="text-xs font-sans text-emerald-300 font-bold leading-relaxed">
+                🚀 Todos os jogadores e fãs do PK XD verão as atualizações do seu painel de forma instantaneamente global e segura.
               </p>
             </div>
           )}
