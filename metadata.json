@@ -1,5 +1,5 @@
 {
-  "name": "PK XD Central",
+  "name": "PKXD Central",
   "description": "O portal oficial de noticias, novidades e contagem regressiva para spoilers de PK XD!",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
