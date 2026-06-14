@@ -1896,6 +1896,8 @@ export default function App() {
             videos={newsList.filter(item => {
               const timestamp = parseInt(item.id);
               if (isNaN(timestamp)) return true;
+              // Ignore filtering for static fallback default contents (low ID integer markers)
+              if (timestamp < 100000) return true;
               return Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000;
             })}
             isAdmin={isAdmin}
