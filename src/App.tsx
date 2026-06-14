@@ -36,7 +36,7 @@ import { playTapSound, playLevelUpSound, playSuccessSound } from './utils/audio'
 
 // Import Firebase config & helpers
 import { auth, db, googleProvider, OperationType, handleFirestoreError } from './firebase';
-import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, User, GoogleAuthProvider } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, User, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
@@ -150,6 +150,9 @@ export default function App() {
   const [inputPasscode, setInputPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminAuthTab, setAdminAuthTab] = useState<'email' | 'google' | 'pin'>('email');
 
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [fanLevel, setFanLevel] = useState(() => {
@@ -627,6 +630,63 @@ export default function App() {
         errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
       }
       setGoogleAuthError(errorMsg);
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleEmailLogin = async (email: string, pass: string) => {
+    setIsAuthenticating(true);
+    setGoogleAuthError(null);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email.trim(), pass);
+      triggerAudio('success');
+      setNotifMessage(`Bem-vindo de volta! 🎉`);
+      setTimeout(() => setNotifMessage(null), 4000);
+    } catch (error: any) {
+      console.error("Email login failed:", error);
+      let errMsg = error?.message || String(error);
+      if (error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-login-credentials' || error?.message?.includes('invalid-credential') || error?.code === 'auth/invalid-credential') {
+        errMsg = 'Senha incorreta ou e-mail inválido! Verifique seus dados.';
+      } else if (error?.code === 'auth/user-not-found') {
+        errMsg = 'E-mail não cadastrado. Cadastre-se grátis para entrar no Ranking!';
+      } else if (error?.code === 'auth/invalid-email') {
+        errMsg = 'Formato de e-mail inválido!';
+      } else if (error?.code === 'auth/too-many-requests') {
+        errMsg = 'Muitas tentativas malsucedidas. Tente novamente mais tarde ou redefina sua senha.';
+      }
+      setGoogleAuthError(`Erro de Login: ${errMsg}`);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleEmailRegister = async (email: string, pass: string, nickname: string) => {
+    setIsAuthenticating(true);
+    setGoogleAuthError(null);
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email.trim(), pass);
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: nickname.trim() || 'Fã Secreto'
+        });
+      }
+      triggerAudio('levelUp');
+      setNotifMessage(`Sua conta de fã foi criada com sucesso como ${nickname}! 🚀`);
+      setTimeout(() => setNotifMessage(null), 4500);
+    } catch (error: any) {
+      console.error("Email register failed:", error);
+      let errMsg = error?.message || String(error);
+      if (error?.code === 'auth/email-already-in-use') {
+        errMsg = 'Este e-mail já está sendo usado por outro fã! Tente fazer login ou use outro.';
+      } else if (error?.code === 'auth/weak-password') {
+        errMsg = 'A senha informada é muito fraca. Digite pelo menos 6 caracteres!';
+      } else if (error?.code === 'auth/invalid-email') {
+        errMsg = 'Endereço de e-mail inválido!';
+      } else if (error?.code === 'auth/operation-not-allowed') {
+        errMsg = 'O login com E-mail e Senha não está ativado nas configurações do Authentication (Sign-in methods) do seu Firebase Console. Por favor, ative-o lá!';
+      }
+      setGoogleAuthError(`Erro ao criar conta: ${errMsg}`);
+    } finally {
       setIsAuthenticating(false);
     }
   };
@@ -1419,7 +1479,7 @@ export default function App() {
                     </p>
                   )}
 
-                  <div className="pt-2 flex flex-col items-center justify-center gap-4">
+                  <div className="pt-2 w-full max-w-2xl mx-auto space-y-5">
                     {user ? (
                       <button
                         onClick={handleLogout}
@@ -1429,35 +1489,151 @@ export default function App() {
                       </button>
                     ) : (
                       <div className="w-full space-y-4">
-                        <div className="flex flex-col md:flex-row items-stretch justify-center gap-3 max-w-2xl mx-auto">
+                        {/* Selector Tabs */}
+                        <div className="flex bg-zinc-950/80 p-1 rounded-2xl border border-white/5 max-w-md mx-auto">
                           <button
-                            onClick={handleLogin}
-                            disabled={isAuthenticating}
-                            className="w-full md:w-auto md:flex-1 px-5 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-indigo-900 active:border-b-0 cursor-pointer shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <Lock className="w-4 h-4" />
-                            <span>{isAuthenticating ? 'ENTRANDO...' : '🔐 LOGIN VIA POPUP'}</span>
-                          </button>
-
-                          <button
-                            onClick={handleLoginRedirect}
-                            disabled={isAuthenticating}
-                            className="w-full md:w-auto md:flex-1 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-cyan-900 active:border-b-0 cursor-pointer shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            <span>{isAuthenticating ? 'ENTRANDO...' : '📱 LOGIN REDIRECIONAR (CELULAR)'}</span>
-                          </button>
-
-                          <button
+                            type="button"
                             onClick={() => {
-                              setUseBackupPasscode(!useBackupPasscode);
-                              setPasscodeError('');
+                              triggerAudio('tap');
+                              setAdminAuthTab('email');
+                              setGoogleAuthError(null);
                             }}
-                            className="w-full md:w-auto px-5 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-sans font-black text-xs uppercase tracking-wider cursor-pointer border border-zinc-700 flex items-center justify-center"
+                            className={`flex-1 py-12 px-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              adminAuthTab === 'email' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                            }`}
                           >
-                            {useBackupPasscode ? 'Cancelar' : '🔑 CÓDIGO PIN'}
+                            🔐 E-mail & Senha
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerAudio('tap');
+                              setAdminAuthTab('google');
+                              setGoogleAuthError(null);
+                            }}
+                            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              adminAuthTab === 'google' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            🌐 Google
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerAudio('tap');
+                              setAdminAuthTab('pin');
+                              setGoogleAuthError(null);
+                            }}
+                            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              adminAuthTab === 'pin' ? 'bg-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            🔑 PIN
                           </button>
                         </div>
+
+                        {/* Rendering active tab form */}
+                        {adminAuthTab === 'email' && (
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              handleEmailLogin(adminEmail, adminPassword);
+                            }}
+                            className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 space-y-4 text-left max-w-md mx-auto"
+                          >
+                            <div className="space-y-1">
+                              <h5 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest pl-0.5">
+                                LOGIN COM CONTA ADMINISTRADORA REAL
+                              </h5>
+                              <p className="text-[10px] text-zinc-400 leading-normal pl-0.5">
+                                Conecte-se com seu e-mail do Firebase (ex: kawanyuri35@gmail.com) para obter token real. Isso habilita sincronização na nuvem oficial para todo fã-clube!
+                              </p>
+                            </div>
+                            <div className="space-y-2.5">
+                              <input
+                                type="email"
+                                required
+                                placeholder="E-mail do Administrador (ex: kawanyuri35@gmail.com)"
+                                value={adminEmail}
+                                onChange={(e) => setAdminEmail(e.target.value)}
+                                className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                              />
+                              <input
+                                type="password"
+                                required
+                                minLength={6}
+                                placeholder="Senha da Conta"
+                                value={adminPassword}
+                                onChange={(e) => setAdminPassword(e.target.value)}
+                                className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                              />
+                            </div>
+                            
+                            <button
+                              type="submit"
+                              disabled={isAuthenticating}
+                              className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-550 active:scale-[0.98] text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                            >
+                              <span>{isAuthenticating ? 'CONECTANDO...' : 'ENTRAR COMO PORTAL ADMIN CLOUD 🔓'}</span>
+                            </button>
+                          </form>
+                        )}
+
+                        {adminAuthTab === 'google' && (
+                          <div className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 space-y-4 max-w-md mx-auto text-center">
+                            <p className="text-xs text-zinc-300">
+                              Entre com sua conta Google oficial como administrador.
+                            </p>
+                            <div className="flex flex-col gap-2.5">
+                              <button
+                                onClick={handleLogin}
+                                disabled={isAuthenticating}
+                                className="w-full px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-indigo-900 active:border-b-0 cursor-pointer shadow-lg transition-all flex items-center justify-center gap-2"
+                              >
+                                <Lock className="w-4 h-4" />
+                                <span>{isAuthenticating ? 'ENTRANDO...' : '🔐 LOGIN VIA POPUP'}</span>
+                              </button>
+
+                              <button
+                                onClick={handleLoginRedirect}
+                                disabled={isAuthenticating}
+                                className="w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-cyan-900 active:border-b-0 cursor-pointer shadow-lg transition-all flex items-center justify-center gap-2"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                                <span>{isAuthenticating ? 'ENTRANDO...' : '📱 LOGIN REDIRECIONAR (CELULAR)'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {adminAuthTab === 'pin' && (
+                          <div className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 space-y-3 max-w-md mx-auto text-left">
+                            <p className="text-zinc-400 text-[11px] font-sans">
+                              ⚠️ <strong>Nota sobre o modo PIN:</strong> Ao usar o Código PIN, você consegue ver o painel, mas os posts adicionados não sobem na nuvem real por restrições do Firebase FireStore. Use o método por <strong>E-mail & Senha</strong> ou <strong>Google</strong> do seu administrador para sincronização total!
+                            </p>
+                            <div className="flex gap-2 pt-1">
+                              <input
+                                type="password"
+                                placeholder="Senha PIN de admin"
+                                value={inputPasscode}
+                                onChange={(e) => setInputPasscode(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handlePasscodeLogin();
+                                }}
+                                className="bg-zinc-900 text-white placeholder-zinc-650 text-xs px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-indigo-500 w-full font-mono"
+                              />
+                              <button
+                                onClick={handlePasscodeLogin}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold font-sans cursor-pointer whitespace-nowrap"
+                              >
+                                Entrar PIN
+                              </button>
+                            </div>
+                            {passcodeError && (
+                              <p className="text-red-400 text-[11px] font-sans pr-1">{passcodeError}</p>
+                            )}
+                          </div>
+                        )}
 
                         {googleAuthError && (
                           <div className="max-w-md mx-auto p-4 bg-red-950/40 border border-red-500/30 rounded-2xl text-left space-y-2">
@@ -1469,35 +1645,8 @@ export default function App() {
                               {googleAuthError}
                             </p>
                             <p className="text-[11px] text-indigo-400 font-sans leading-relaxed mt-1">
-                              💡 <strong>Dica:</strong> Se você estiver rodando em <strong>pkxdcentral.github.io</strong> ou em outro link customizado, siga o tutorial de **"Domínio Autorizado"** disponível na aba de Spoilers do seu Painel de Administrador (após logar usando o Código PIN) para resolver em 30 segundos!
+                              💡 <strong>Caso use E-mail/Senha:</strong> Registre-se primeiro no formulário na seção <strong>"Fã Level"</strong> abaixo usando seu e-mail de admin (kawanyuri35@gmail.com). Depois, faça o login dele aqui no painel usando e-mail e senha correspondentes!
                             </p>
-                          </div>
-                        )}
-
-                        {useBackupPasscode && (
-                          <div className="max-w-xs mx-auto p-4 bg-zinc-950/80 rounded-2xl border border-white/5 space-y-3">
-                            <p className="text-zinc-400 text-[11px] font-sans">Digite um código PIN de administrador válido para conectar:</p>
-                            <div className="flex gap-2">
-                              <input
-                                type="password"
-                                placeholder="Código PIN de Admin"
-                                value={inputPasscode}
-                                onChange={(e) => setInputPasscode(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handlePasscodeLogin();
-                                }}
-                                className="bg-zinc-900 text-white placeholder-zinc-600 text-xs px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-indigo-500 w-full"
-                              />
-                              <button
-                                onClick={handlePasscodeLogin}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold font-sans cursor-pointer"
-                              >
-                                Entrar
-                              </button>
-                            </div>
-                            {passcodeError && (
-                              <p className="text-red-400 text-[11px] font-sans text-left">{passcodeError}</p>
-                            )}
                           </div>
                         )}
                       </div>
@@ -1585,6 +1734,8 @@ export default function App() {
             onLogin={handleLogin}
             onLoginRedirect={handleLoginRedirect}
             onLogout={handleLogout}
+            onEmailLogin={handleEmailLogin}
+            onEmailRegister={handleEmailRegister}
           />
         </div>
 

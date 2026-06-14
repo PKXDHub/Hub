@@ -12,6 +12,8 @@ interface FanLevelSectionProps {
   onLogin?: () => void;
   onLoginRedirect?: () => void;
   onLogout?: () => void;
+  onEmailLogin?: (email: string, pass: string) => void;
+  onEmailRegister?: (email: string, pass: string, nickname: string) => void;
 }
 
 interface RankedPlayer {
@@ -30,7 +32,9 @@ export default function FanLevelSection({
   user,
   onLogin,
   onLoginRedirect,
-  onLogout
+  onLogout,
+  onEmailLogin,
+  onEmailRegister
 }: FanLevelSectionProps) {
   // XP tracker
   const [xp, setXp] = useState(() => {
@@ -85,6 +89,14 @@ export default function FanLevelSection({
   const [nickInput, setNickInput] = useState(nickname);
 
   const [notif, setNotif] = useState<string | null>(null);
+  
+  // Email and Password Login / Registration states
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [emailForm, setEmailForm] = useState('');
+  const [passwordForm, setPasswordForm] = useState('');
+  const [nicknameForm, setNicknameForm] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   // Generate or load a unique browser/device client ID
   const [clientId] = useState(() => {
@@ -347,37 +359,167 @@ export default function FanLevelSection({
 
       {/* Connection/Login Banner for Fans */}
       {!user || user.uid === 'admin_fallback' ? (
-        <div className="bg-gradient-to-r from-violet-600/20 via-indigo-600/10 to-transparent border-2 border-indigo-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
-          <div className="space-y-1 text-left">
-            <h4 className="text-sm sm:text-base font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="w-5 h-5 text-yellow-300 animate-pulse" />
+        <div className="bg-gradient-to-b from-indigo-950/40 via-zinc-900/40 to-transparent border-2 border-indigo-500/30 rounded-3xl p-6 space-y-6 shadow-2xl text-left font-sans">
+          <div className="space-y-1">
+            <h4 className="text-base sm:text-lg font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Award className="w-5.5 h-5.5 text-yellow-300 animate-pulse fill-yellow-500/20" />
               <span>Conecte sua Conta para entrar no Ranking Real! 🏆</span>
             </h4>
-            <p className="text-xs text-gray-300 leading-normal max-w-2xl">
-              Seu perfil está como <strong className="text-orange-400 font-mono">{nickname}</strong> mas as estatísticas ficam apenas no seu navegador. Faça login rápido com o Google para salvar seu fã-level e se destacar na classificação dos fã-clubes oficiais!
+            <p className="text-xs text-gray-300 leading-normal max-w-3xl">
+              Seu perfil atual é temporário como <strong className="text-orange-400 font-mono font-black">{nickname}</strong>. Faça login rápido ou crie uma conta usando seu e-mail e senha abaixo para salvar seu fã-level, streak de fogo diário, e aparecer para todo mundo!
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            <button
-              onClick={() => {
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch pt-2">
+            
+            {/* Left Column: Google Sign-in */}
+            <div className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <h5 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <User className="w-4 h-4" />
+                  <span>Opção 1: CONEXÃO COM GOOGLE</span>
+                </h5>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Conecte estantaneamente com sua conta Google existente se os popups estiverem ativos no seu navegador.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => {
+                    if (soundEnabled) playSuccessSound();
+                    if (onLogin) onLogin();
+                  }}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-550 active:scale-[0.98] text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4 text-yellow-200 animate-spin" />
+                  <span>Entrar com Google (Popup)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (soundEnabled) playTapSound();
+                    if (onLoginRedirect) onLoginRedirect();
+                  }}
+                  className="w-full py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] text-gray-300 font-sans font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer border border-zinc-750 transition-all flex items-center justify-center gap-1"
+                  title="Use se o Popup do Google estiver bloqueado no celular"
+                >
+                  <span>Redirecionar Celular 📱</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Email / Password login */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
                 if (soundEnabled) playTapSound();
-                if (onLogin) onLogin();
+                if (!emailForm || !passwordForm) {
+                  setAuthError('Preencha os campos de e-mail e senha!');
+                  return;
+                }
+                setAuthError(null);
+                if (authTab === 'register') {
+                  const pickNickname = nicknameForm.trim() || nickname;
+                  if (onEmailRegister) onEmailRegister(emailForm, passwordForm, pickNickname);
+                } else {
+                  if (onEmailLogin) onEmailLogin(emailForm, passwordForm);
+                }
               }}
-              className="px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 active:scale-95 text-white font-sans font-black text-xs uppercase tracking-wider rounded-2xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+              className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 flex flex-col justify-between space-y-4"
             >
-              <User className="w-4 h-4" />
-              <span>Entrar Google Popup</span>
-            </button>
-            <button
-              onClick={() => {
-                if (soundEnabled) playTapSound();
-                if (onLoginRedirect) onLoginRedirect();
-              }}
-              className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-gray-300 font-sans font-black text-xs uppercase tracking-wider rounded-2xl cursor-pointer border border-zinc-700 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
-              title="Clique se estiver no celular e o popup do Google for bloqueado"
-            >
-              <span>Login Celular 📱</span>
-            </button>
+              <div className="space-y-3">
+                {/* Auth Mode Toggle */}
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-xs font-black text-violet-400 uppercase tracking-widest">
+                    Opção 2: E-MAIL E SENHA (100% GARANTIDO)
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (soundEnabled) playTapSound();
+                        setAuthTab('login');
+                        setAuthError(null);
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        authTab === 'login' ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      Entrar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (soundEnabled) playSuccessSound();
+                        setAuthTab('register');
+                        setAuthError(null);
+                        setNicknameForm(nickname);
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        authTab === 'register' ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      Cadastrar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form fields */}
+                <div className="space-y-2.5">
+                  <div>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Seu e-mail (ex: fã@email.com)"
+                      value={emailForm}
+                      onChange={(e) => setEmailForm(e.target.value)}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder="Sua senha (mínimo 6 dígitos)"
+                      value={passwordForm}
+                      onChange={(e) => setPasswordForm(e.target.value)}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                  </div>
+
+                  {authTab === 'register' && (
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 pl-0.5 leading-none">
+                        Nickname Oficial no Site:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Nome de Fã"
+                        value={nicknameForm}
+                        onChange={(e) => setNicknameForm(e.target.value)}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-bold"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {authError && (
+                  <p className="text-[11px] text-red-400 bg-red-950/20 border border-red-500/10 p-2 rounded-xl">
+                    ⚠️ {authError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 px-4 bg-zinc-800 hover:bg-violet-600 hover:text-white text-zinc-300 font-sans font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer border border-zinc-750 hover:border-violet-500 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>{authTab === 'register' ? 'CRIAR MINHA CONTA DE FÃ 🚀' : 'ENTRAR NA CONTA E SINCRONIZAR 🔓'}</span>
+              </button>
+            </form>
+
           </div>
         </div>
       ) : (
@@ -385,10 +527,10 @@ export default function FanLevelSection({
           <div className="space-y-1 text-left">
             <h4 className="text-sm sm:text-base font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 animate-pulse" />
-              <span>Você está Conectado em Tempo Real! ✅</span>
+              <span>Sua conta de fã está ativa! ✅</span>
             </h4>
             <p className="text-xs text-gray-300 leading-normal">
-              Autenticado com sucesso como <strong className="text-emerald-300 font-mono underline">{user.email}</strong>. Suas conquistas, check-ins de foguinhos diários e níveis estão salvos com segurança de forma permanente.
+              Autenticado com sucesso como <strong className="text-emerald-300 font-mono underline">{user.email}</strong>. Suas conquistas, níveis e fogo diário diário estão sincronizados em tempo real do fã-clube.
             </p>
           </div>
           <button
