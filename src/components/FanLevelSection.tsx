@@ -23,28 +23,52 @@ interface RankedPlayer {
 export default function FanLevelSection({ level, onLevelUp, soundEnabled, user }: FanLevelSectionProps) {
   // XP tracker
   const [xp, setXp] = useState(() => {
-    const saved = localStorage.getItem('pkxd_fan_xp');
-    return saved ? parseInt(saved) : 0;
+    try {
+      const saved = localStorage.getItem('pkxd_fan_xp');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 0;
   });
 
   // Daily claim state
   const [hasClaimedDaily, setHasClaimedDaily] = useState(() => {
-    const lastClaim = localStorage.getItem('pkxd_last_claim_date');
-    if (!lastClaim) return false;
-    const today = new Date().toDateString();
-    return lastClaim === today;
+    try {
+      const lastClaim = localStorage.getItem('pkxd_last_claim_date');
+      if (!lastClaim) return false;
+      const today = new Date().toDateString();
+      return lastClaim === today;
+    } catch (e) {
+      return false;
+    }
   });
 
   // Flame / Fire streak counter ("foguinho")
   const [fireStreak, setFireStreak] = useState(() => {
-    const saved = localStorage.getItem('pkxd_fire_streak');
-    return saved ? parseInt(saved) : 1; // Start with 1 on first use
+    try {
+      const saved = localStorage.getItem('pkxd_fire_streak');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        return isNaN(parsed) ? 1 : parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 1; // Start with 1 on first use
   });
 
   // User's custom nickname
   const [nickname, setNickname] = useState(() => {
-    const saved = localStorage.getItem('pkxd_username_nickname');
-    return saved || 'Jogador_Convidado';
+    try {
+      const saved = localStorage.getItem('pkxd_username_nickname');
+      return saved || 'Jogador_Convidado';
+    } catch (e) {
+      return 'Jogador_Convidado';
+    }
   });
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nickInput, setNickInput] = useState(nickname);
@@ -53,12 +77,16 @@ export default function FanLevelSection({ level, onLevelUp, soundEnabled, user }
 
   // Generate or load a unique browser/device client ID
   const [clientId] = useState(() => {
-    let saved = localStorage.getItem('pkxd_user_clientId');
-    if (!saved) {
-      saved = 'u_' + Math.random().toString(36).substring(2, 11);
-      localStorage.setItem('pkxd_user_clientId', saved);
+    try {
+      let saved = localStorage.getItem('pkxd_user_clientId');
+      if (!saved) {
+        saved = 'u_' + Math.random().toString(36).substring(2, 11);
+        localStorage.setItem('pkxd_user_clientId', saved);
+      }
+      return saved;
+    } catch (e) {
+      return 'u_fallback_' + Math.random().toString(36).substring(2, 5);
     }
-    return saved;
   });
 
   const activePlayerId = user?.uid || clientId;

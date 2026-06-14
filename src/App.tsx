@@ -40,35 +40,71 @@ import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firesto
 
 export default function App() {
   const [newsList, setNewsList] = useState<NewsItem[]>(() => {
-    const saved = localStorage.getItem('pkxd_central_news');
-    return saved ? JSON.parse(saved) : INITIAL_NEWS;
+    try {
+      const saved = localStorage.getItem('pkxd_central_news');
+      if (saved && saved !== 'undefined') {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn("Error reading pkxd_central_news from localStorage:", e);
+    }
+    return INITIAL_NEWS;
   });
 
   const [spoilerTitle, setSpoilerTitle] = useState(() => {
-    return localStorage.getItem('pkxd_spoiler_title') || 'Aguardando Próximos Spoilers! 🔮';
+    try {
+      return localStorage.getItem('pkxd_spoiler_title') || 'Aguardando Próximos Spoilers! 🔮';
+    } catch (e) {
+      return 'Aguardando Próximos Spoilers! 🔮';
+    }
   });
 
   const [spoilerDesc, setSpoilerDesc] = useState(() => {
-    return localStorage.getItem('pkxd_spoiler_desc') || 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!';
+    try {
+      return localStorage.getItem('pkxd_spoiler_desc') || 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!';
+    } catch (e) {
+      return 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!';
+    }
   });
 
   const [spoilerImage, setSpoilerImage] = useState(() => {
-    return localStorage.getItem('pkxd_spoiler_image') || '';
+    try {
+      return localStorage.getItem('pkxd_spoiler_image') || '';
+    } catch (e) {
+      return '';
+    }
   });
 
   const [pastSpoilers, setPastSpoilers] = useState<PastSpoiler[]>([]);
 
   const [siteLogoUrl, setSiteLogoUrl] = useState(() => {
-    return localStorage.getItem('pkxd_site_logo_url') || '';
+    try {
+      return localStorage.getItem('pkxd_site_logo_url') || '';
+    } catch (e) {
+      return '';
+    }
   });
 
   const [forceReveal, setForceReveal] = useState(() => {
-    return localStorage.getItem('pkxd_force_reveal') === 'true';
+    try {
+      return localStorage.getItem('pkxd_force_reveal') === 'true';
+    } catch (e) {
+      return false;
+    }
   });
 
   const [revealedAt, setRevealedAt] = useState<number>(() => {
-    const saved = localStorage.getItem('pkxd_spoiler_revealed_at');
-    return saved ? parseInt(saved) : 0;
+    try {
+      const saved = localStorage.getItem('pkxd_spoiler_revealed_at');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 0;
   });
 
   const [pastSpoilerToEdit, setPastSpoilerToEdit] = useState<PastSpoiler | null>(null);
@@ -92,8 +128,16 @@ export default function App() {
 
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [fanLevel, setFanLevel] = useState(() => {
-    const saved = localStorage.getItem('pkxd_fan_level');
-    return saved ? parseInt(saved) : 1;
+    try {
+      const saved = localStorage.getItem('pkxd_fan_level');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        return isNaN(parsed) ? 1 : parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 1;
   });
   
   const [newsToEdit, setNewsToEdit] = useState<NewsItem | null>(null);
