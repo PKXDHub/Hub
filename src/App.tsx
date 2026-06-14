@@ -249,13 +249,43 @@ export default function App() {
       })
       .catch((error: any) => {
         console.error("Redirect login failed:", error);
-        let errorMsg = error?.message || String(error);
-        if (error?.code === 'auth/unauthorized-domain' || errorMsg.includes('unauthorized-domain') || errorMsg.includes('domain-not-authorized')) {
+        const rawMsg = error?.message || String(error);
+        const errorMsgLower = rawMsg.toLowerCase();
+        const codeLower = (error?.code || '').toLowerCase();
+        
+        let errorMsg = rawMsg;
+        if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
           errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados no seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
+        } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
+          errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
         }
         setGoogleAuthError(errorMsg);
       });
   }, []);
+
+  // Dynamically update site favicon to match the site logo URL (or fallback)
+  useEffect(() => {
+    let logoIconUrl = siteLogoUrl;
+    // Fallback if logo is empty or is a non-direct Google Photos sharing link
+    if (!logoIconUrl || logoIconUrl.includes("photos.app.goo.gl") || logoIconUrl.includes("google.com/photos")) {
+      logoIconUrl = "./favicon.svg";
+    }
+    
+    if (logoIconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = logoIconUrl;
+      if (logoIconUrl.endsWith('.svg')) {
+        link.setAttribute('type', 'image/svg+xml');
+      } else {
+        link.removeAttribute('type');
+      }
+    }
+  }, [siteLogoUrl]);
 
   // Realtime Firebase news listener
   useEffect(() => {
@@ -563,9 +593,15 @@ export default function App() {
       setTimeout(() => setNotifMessage(null), 4000);
     } catch (error: any) {
       console.error("Login failed:", error);
-      let errorMsg = error?.message || String(error);
-      if (error?.code === 'auth/unauthorized-domain' || errorMsg.includes('unauthorized-domain') || errorMsg.includes('domain-not-authorized')) {
+      const rawMsg = error?.message || String(error);
+      const errorMsgLower = rawMsg.toLowerCase();
+      const codeLower = (error?.code || '').toLowerCase();
+      
+      let errorMsg = rawMsg;
+      if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
         errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados nas configurações do seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
+      } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
+        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
       }
       setGoogleAuthError(errorMsg);
     } finally {
@@ -580,9 +616,15 @@ export default function App() {
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       console.error("Redirect login failed:", error);
-      let errorMsg = error?.message || String(error);
-      if (error?.code === 'auth/unauthorized-domain' || errorMsg.includes('unauthorized-domain') || errorMsg.includes('domain-not-authorized')) {
+      const rawMsg = error?.message || String(error);
+      const errorMsgLower = rawMsg.toLowerCase();
+      const codeLower = (error?.code || '').toLowerCase();
+      
+      let errorMsg = rawMsg;
+      if (codeLower === 'auth/unauthorized-domain' || errorMsgLower.includes('unauthorized-domain') || errorMsgLower.includes('domain-not-authorized')) {
         errorMsg = `⚠️ DOMÍNIO NÃO AUTORIZADO NO FIREBASE! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados nas configurações do seu Firebase Console (Authentication > Configurações > Domínios Autorizados) para liberar o login com o Google!`;
+      } else if (codeLower === 'auth/operation-not-allowed' || errorMsgLower.includes('operation-not-allowed')) {
+        errorMsg = `⚠️ MÉTODO DE LOGIN GOOGLE DESATIVADO!\n\nEste erro acontece porque o login com o Google não está ativado no Authentication do seu Firebase. Siga esses passos rápidos para ativar:\n\n1️⃣ Acesse o console: https://console.firebase.google.com e entre no seu projeto "pkxd-e817c".\n2️⃣ No menu esquerdo, acesse "Compilação" (Build) > "Authentication".\n3️⃣ Clique na aba "Sign-in method" (Método de login) no topo.\n4️⃣ Clique no botão "Adicionar novo provedor" (Add new provider) e selecione "Google".\n5️⃣ Ative o interruptor de ativação (Enable) no topo.\n6️⃣ Configure o e-mail de suporte (ex: kawanyuri35@gmail.com) e clique em "Salvar" (Save).\n\nProntinho! Após salvar, atualize esta página e clique em conectar! 🚀`;
       }
       setGoogleAuthError(errorMsg);
       setIsAuthenticating(false);
@@ -628,8 +670,19 @@ export default function App() {
     }
   };
 
+  const checkAdminWritePermission = (): boolean => {
+    if (!user || user.uid === 'admin_fallback') {
+      triggerAudio('tap');
+      setNotifMessage("⚠️ ERRO: Modo PIN ativo! Faça login com sua Conta Google Administradora para publicar na nuvem.");
+      setTimeout(() => setNotifMessage(null), 6000);
+      return false;
+    }
+    return true;
+  };
+
   // Create news
   const handleAddNews = async (newPost: Omit<NewsItem, 'id'>) => {
+    if (!checkAdminWritePermission()) return;
     const docId = Date.now().toString();
     const fresh: NewsItem = {
       ...newPost,
@@ -652,6 +705,7 @@ export default function App() {
   };
 
   const handleSaveEdit = async (updatedItem: NewsItem) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'news', updatedItem.id);
       await setDoc(docRef, updatedItem);
@@ -664,6 +718,7 @@ export default function App() {
 
   // Delete news
   const handleDeleteNews = async (id: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'news', id);
       await deleteDoc(docRef);
@@ -675,6 +730,7 @@ export default function App() {
 
   // Update spoiler settings and add to history
   const handleUpdateSpoilerSettings = async (title: string, desc: string, imageUrl?: string, forceRevealActive: boolean = false) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
@@ -715,6 +771,7 @@ export default function App() {
 
   // Direct insert to past spoilers archive without touching main active spoiler
   const handleDirectArchivePastSpoiler = async (title: string, desc: string, imageUrl?: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const pastId = Date.now().toString();
       const pastRef = doc(db, 'past_spoilers', pastId);
@@ -735,6 +792,7 @@ export default function App() {
 
   // Move current active spotlight spoiler to past archives and clear it
   const handleArchiveAndClearActiveSpoiler = async (title: string, desc: string, imageUrl: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const isDefault = !title || 
         title === 'Aguardando Próximos Spoilers! 🔮' || 
@@ -791,6 +849,7 @@ export default function App() {
 
   // Delete active spoiler directly from the site without archiving it
   const handleDeleteActiveSpoiler = async () => {
+    if (!checkAdminWritePermission()) return;
     try {
       const defaultTitle = 'Aguardando Próximos Spoilers! 🔮';
       const defaultDesc = 'Ainda não temos spoilers ativos para esta semana. Fique atento ao nosso canal no WhatsApp para novidades e acompanhe a contagem regressiva toda segunda às 17h30!';
@@ -825,6 +884,7 @@ export default function App() {
 
   // Update spoiler delayed status
   const handleUpdateDelay = async (delayed: boolean, message: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
@@ -853,6 +913,7 @@ export default function App() {
 
   // Disparar notificação manual para celular
   const handleSendCustomNotification = async (title: string, body: string, type: 'story_published' | 'countdown_alert' | 'custom_push' | 'delayed_alert') => {
+    if (!checkAdminWritePermission()) return;
     const notifId = Date.now().toString();
     try {
       const notifRef = doc(db, 'notifications', notifId);
@@ -871,6 +932,7 @@ export default function App() {
 
   // Save edits of past archive spoilers
   const handleSaveEditPastSpoiler = async (id: string, title: string, desc: string, imageUrl?: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'past_spoilers', id);
       await setDoc(docRef, {
@@ -891,6 +953,7 @@ export default function App() {
 
   // Delete past spoiler
   const handleDeletePastSpoiler = async (id: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'past_spoilers', id);
       await deleteDoc(docRef);
@@ -902,6 +965,7 @@ export default function App() {
 
   // Update logo url
   const handleUpdateLogoSettings = async (url: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
@@ -915,6 +979,7 @@ export default function App() {
 
   // Featured video handlers
   const handleAddFeaturedVideo = async (video: Omit<FeaturedVideo, 'id' | 'createdAt'>) => {
+    if (!checkAdminWritePermission()) return;
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'featured_videos', id);
@@ -926,6 +991,7 @@ export default function App() {
   };
 
   const handleDeleteFeaturedVideo = async (id: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       await deleteDoc(doc(db, 'featured_videos', id));
       triggerAudio('tap');
@@ -936,6 +1002,7 @@ export default function App() {
 
   // Theory handlers
   const handleAddTheory = async (theory: Omit<Theory, 'id' | 'likes' | 'createdAt'>) => {
+    if (!checkAdminWritePermission()) return;
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'theories', id);
@@ -957,6 +1024,7 @@ export default function App() {
   };
 
   const handleDeleteTheory = async (id: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       await deleteDoc(doc(db, 'theories', id));
       triggerAudio('tap');
@@ -967,6 +1035,7 @@ export default function App() {
 
   // Curated Shorts handlers
   const handleAddShort = async (short: Omit<ShortItem, 'id' | 'createdAt'>) => {
+    if (!checkAdminWritePermission()) return;
     const id = Date.now().toString();
     try {
       const docRef = doc(db, 'shorts', id);
@@ -978,6 +1047,7 @@ export default function App() {
   };
 
   const handleDeleteShort = async (id: string) => {
+    if (!checkAdminWritePermission()) return;
     try {
       await deleteDoc(doc(db, 'shorts', id));
       triggerAudio('tap');
@@ -988,6 +1058,7 @@ export default function App() {
 
   // Extra timer details handler
   const handleUpdateExtraCountdown = async (title: string, date: string, enabled: boolean) => {
+    if (!checkAdminWritePermission()) return;
     try {
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
@@ -1003,6 +1074,7 @@ export default function App() {
 
   // Clear / restore default backup list
   const handleResetToDefaults = async () => {
+    if (!checkAdminWritePermission()) return;
     try {
       // Restore Cloud configuration setting defaults
       const docRef = doc(db, 'settings', 'app');
@@ -1228,30 +1300,56 @@ export default function App() {
             {isAdmin ? (
               <div className="space-y-4 text-left">
                 {/* Admin Welcome Badge */}
-                <div className="bg-emerald-500/10 border-2 border-emerald-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
-                      A
+                {user?.uid === 'admin_fallback' ? (
+                  <div className="bg-amber-500/10 border-2 border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-black animate-pulse">
+                        PIN
+                      </div>
+                      <div>
+                        <h4 className="font-sans font-black text-amber-400 text-sm sm:text-base uppercase tracking-wide flex items-center gap-1.5">
+                          ⚠️ MODO PIN LOCAL ATIVO (SEM GRAVAÇÃO NUVEM)
+                        </h4>
+                        <p className="font-sans text-[11px] text-zinc-305 leading-normal max-w-2xl">
+                          Você entrou com o Código de Segurança. Para o database salvar suas novidades e aparecer para outros fãs, por favor faça login via Google no painel de Entrar abaixo!
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-sans font-black text-white text-sm sm:text-base uppercase tracking-wide">
-                        PAINEL DE CONTROLE CENTRAL ATIVO
-                      </h4>
-                      <p className="font-sans text-[11px] text-emerald-300">
-                        Acesso autorizado! Todas as suas publicações e configurações de spoilers serão atualizadas instantaneamente na nuvem em tempo real.
-                      </p>
-                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-400/20 hover:bg-red-400/30 text-red-350 hover:text-white rounded-xl text-xs font-black uppercase transition-all tracking-wider border border-red-500/30 cursor-pointer whitespace-nowrap"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sair do PIN</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-red-400/20 hover:bg-red-400/30 text-red-300 hover:text-white rounded-xl text-xs font-black uppercase transition-all tracking-wider border border-red-500/30 cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sair</span>
-                  </button>
-                </div>
+                ) : (
+                  <div className="bg-emerald-500/10 border-2 border-emerald-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+                        OK
+                      </div>
+                      <div>
+                        <h4 className="font-sans font-black text-white text-sm sm:text-base uppercase tracking-wide">
+                          PAINEL DE CONTROLE CENTRAL ATIVO (NUVEM REAL)
+                        </h4>
+                        <p className="font-sans text-[11px] text-emerald-300">
+                          Acesso autorizado via Login Google! Suas publicações estão sincronizadas em tempo real com todo o fã-clube.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-400/20 hover:bg-red-400/30 text-red-300 hover:text-white rounded-xl text-xs font-black uppercase transition-all tracking-wider border border-red-500/30 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sair</span>
+                    </button>
+                  </div>
+                )}
 
                 <AdminPanel 
+                  user={user}
                   onAddNews={handleAddNews}
                   onUpdateSpoiler={handleUpdateSpoilerSettings}
                   activeSpoilerTitle={spoilerTitle}
@@ -1367,7 +1465,7 @@ export default function App() {
                               <AlertTriangle className="w-4 h-4" />
                               <span>Erro de Conexão</span>
                             </div>
-                            <p className="text-gray-300 text-xs font-sans leading-relaxed">
+                            <p className="text-gray-300 text-xs font-sans leading-relaxed whitespace-pre-wrap bg-black/40 border border-red-500/10 p-3 rounded-xl">
                               {googleAuthError}
                             </p>
                             <p className="text-[11px] text-indigo-400 font-sans leading-relaxed mt-1">
@@ -1484,6 +1582,9 @@ export default function App() {
             onLevelUp={handleUpgradeLevel}
             soundEnabled={soundEnabled}
             user={user}
+            onLogin={handleLogin}
+            onLoginRedirect={handleLoginRedirect}
+            onLogout={handleLogout}
           />
         </div>
 

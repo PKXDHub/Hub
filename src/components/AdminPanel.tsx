@@ -10,6 +10,7 @@ import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebas
 import firebaseConfig from '../../firebase-applet-config.json';
 
 interface AdminPanelProps {
+  user?: any;
   onAddNews: (item: Omit<NewsItem, 'id'>) => void;
   onUpdateSpoiler: (title: string, desc: string, imageUrl?: string, forceReveal?: boolean) => void;
   activeSpoilerTitle: string;
@@ -150,6 +151,7 @@ function parseAndRenderPreview(text: string) {
 }
 
 export default function AdminPanel({
+  user,
   onAddNews,
   onUpdateSpoiler,
   activeSpoilerTitle,
@@ -536,6 +538,8 @@ export default function AdminPanel({
         customErr = 'Acesso bloqueado por restrições de escopo do Gmail do Google. Siga o tutorial de "Usuários de Teste" abaixo para liberar o acesso imediatamente! 🔒';
       } else if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain') || err.message?.includes('domain-not-authorized')) {
         customErr = `⚠️ ERRO DE DOMÍNIO NÃO AUTORIZADO! O domínio atual do seu site ("${window.location.hostname}") não está cadastrado ou autorizado no seu projeto do Firebase. Você precisa adicionar "${window.location.hostname}" na lista de Domínios Autorizados no Firebase Console do seu app para liberar o login do e-mail! Siga as instruções no guia passo a passo logo abaixo para resolver super rápido! 🚀`;
+      } else if ((err.code || '').toLowerCase() === 'auth/operation-not-allowed' || (err.message || '').toLowerCase().includes('operation-not-allowed') || customErr.toLowerCase().includes('operation-not-allowed')) {
+        customErr = `⚠️ PROVEDOR GOOGLE DESATIVADO NO FIREBASE! No painel do seu Firebase (projeto - pkxd-e817c), clique em Authentication > Sign-in method > Adicionar Provedor > Selecione "Google", adicione o e-mail de suporte (ex: kawanyuri35@gmail.com) e salve para ativar o login com contas Google!`;
       }
       
       setGmailError(customErr);
@@ -562,7 +566,11 @@ export default function AdminPanel({
       await signInWithRedirect(auth, provider);
     } catch (err: any) {
       console.error('Error connecting to Gmail via redirect:', err);
-      setGmailError(err.message || 'Falha ao conectar com o Gmail por redirecionamento.');
+      let customErr = err.message || 'Falha ao conectar com o Gmail por redirecionamento.';
+      if (err.code === 'auth/operation-not-allowed' || err.message?.includes('operation-not-allowed') || customErr.includes('operation-not-allowed')) {
+        customErr = `⚠️ PROVEDOR GOOGLE DESATIVADO NO FIREBASE! No painel do seu Firebase (projeto - pkxd-e817c), clique em Authentication > Sign-in method > Adicionar Provedor > Selecione "Google", adicione o e-mail de suporte (ex: kawanyuri35@gmail.com) e salve para ativar o login com contas Google!`;
+      }
+      setGmailError(customErr);
       setIsGmailLoading(false);
     }
   };
@@ -582,7 +590,22 @@ export default function AdminPanel({
           setGmailToken(null);
           throw new Error('Sessão do Gmail expirada. Conecte novamente.');
         }
-        throw new Error('Erro ao listar e-mails do Gmail.');
+        
+        let detailedError = "Erro ao listar e-mails do Gmail.";
+        try {
+          const errData = await response.json();
+          if (errData?.error?.message) {
+            detailedError = `Erro da API Google Gmail: ${errData.error.message}`;
+            const msgLower = errData.error.message.toLowerCase();
+            if (msgLower.includes('disabled') || msgLower.includes('has not been used')) {
+              detailedError = `⚠️ API DO GMAIL DESATIVADA NO SEU GOOGLE CLOUD!\n\nPor favor, ative a API do Gmail seguindo os passos abaixo:\n\n1️⃣ Acesse o console do Google Cloud: https://console.cloud.google.com/apis/library/gmail.googleapis.com?project=${(firebaseConfig as any)?.projectId || 'pkxd-e817c'}\n2️⃣ Verifique se o projeto "${(firebaseConfig as any)?.projectId || 'pkxd-e817c'}" está selecionado no topo.\n3️⃣ Clique no botão azul "ATIVAR" (Enable).\n\nDepois de ativar, aguarde 30 segundos, volte aqui e tente conectar novamente! 🚀`;
+            } else if (msgLower.includes('insufficient') || msgLower.includes('permission')) {
+              detailedError = `⚠️ PERMISSÕES INSUFICIENTES!\n\nEste erro ocorre porque a sua conta Google não concedeu autorização completa ao aplicativo para ler os e-mails. Quando for selecionar sua conta para fazer login, certifique-se de marcar a caixinha que autoriza "Visualizar suas mensagens de e-mail e configurações do Gmail" (Gmail Readonly scope).`;
+            }
+          }
+        } catch (_) {}
+        
+        throw new Error(detailedError);
       }
       
       const data = await response.json();
@@ -1260,6 +1283,21 @@ export default function AdminPanel({
 
       {isOpen && (
         <div className="p-6 space-y-6">
+          {user?.uid === 'admin_fallback' && (
+            <div className="p-4 bg-amber-950/40 border-2 border-amber-500/30 rounded-2xl text-left space-y-1.5 shadow-md">
+              <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs uppercase tracking-wide">
+                <AlertTriangle className="w-4.5 h-4.5 animate-bounce text-amber-400 fill-amber-950/10" />
+                <span>⚠️ AVISO IMPORTANTE DE CONEXÃO (MODO PIN)</span>
+              </div>
+              <p className="text-gray-300 text-xs font-sans leading-relaxed">
+                Você acessou usando o <strong>Código PIN de emergência</strong>. De acordo com as leis de segurança do Firebase Firestore, <strong className="text-amber-300">posts feitos via PIN não são gravados no servidor de verdade</strong>, ficando apenas no seu navegador de forma temporária.
+              </p>
+              <p className="text-xs font-sans text-amber-400 font-bold leading-relaxed">
+                👉 <strong>Como sincronizar com todos:</strong> Clique em "SAIR" no topo e faça login usando o botão <strong>"LOGIN VIA POPUP"</strong> ou <strong>"CELULAR"</strong> com a sua conta Google do administrador (kawanyuri35@gmail.com). Isso habilitará a publicação global instantânea!
+              </p>
+            </div>
+          )}
+
           {/* Sub tabs navigation */}
           <div className="flex flex-wrap gap-2 border-b border-white/5 pb-4">
             <button
@@ -1613,14 +1651,14 @@ export default function AdminPanel({
                             🌐 DOMÍNIO NÃO AUTORIZADO NO FIREBASE? (Passo a Passo)
                           </h5>
                           <p className="text-[11px] text-gray-300 mt-1 leading-relaxed">
-                            Se o site está hospedado em <strong>pkxdcentral.github.io</strong> ou em outros links personalizados, o Google impede a conexão do e-mail até que o domínio seja adicionado como autorizado. Resolva isso em 30 segundos no console Firebase:
+                            O Google impede a conexão do e-mail até que o domínio correspondente seja adicionado como autorizado. Adicione os domínios abaixo em 30 segundos no seu console Firebase:
                           </p>
                         </div>
                       </div>
 
                       <div className="bg-black/40 border border-white/5 p-3 rounded-xl space-y-2 text-[10.5px] font-sans text-gray-300 leading-relaxed font-sans">
                         <p>
-                          <strong className="text-indigo-400">Passo 1:</strong> Abra o console do Firebase em: <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold hover:text-cyan-300">console.firebase.google.com</a>.
+                          <strong className="text-indigo-400">Passo 1:</strong> Abra o console do Firebase em: <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold hover:text-cyan-300 font-sans">console.firebase.google.com</a>.
                         </p>
                         <p>
                           <strong className="text-indigo-400">Passo 2:</strong> Clique no seu projeto <strong>{(firebaseConfig as any)?.projectId || 'pkxd-e817c'}</strong>.
@@ -1635,7 +1673,24 @@ export default function AdminPanel({
                           <strong className="text-indigo-400">Passo 5:</strong> No menu vertical à esquerda, clique em <strong className="text-yellow-300">Domínios autorizados (Authorized domains)</strong>.
                         </p>
                         <p>
-                          <strong className="text-indigo-400">Passo 6:</strong> Clique em <strong className="text-white">Adicionar domínio (Add domain)</strong>, digite exatamente <code className="text-cyan-300 bg-zinc-950 px-1.5 py-0.5 rounded select-all">pkxdcentral.github.io</code> (ou qualquer outro domínio onde o site esteja rodando) e clique em <strong className="text-white">Adicionar</strong>.
+                          <strong className="text-indigo-400">Passo 6:</strong> Clique em <strong className="text-white">Adicionar domínio</strong> de cada um separadamente:
+                        </p>
+                        <div className="mt-2 pl-3 border-l-2 border-indigo-500 space-y-2.5">
+                          <div>
+                            <span className="text-[10px] text-gray-400 block uppercase font-bold">1️⃣ Domínio do Site Final:</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <code className="text-cyan-300 bg-zinc-950 px-2 py-1 rounded text-xs select-all font-mono font-bold">pkxdcentral.github.io</code>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-gray-400 block uppercase font-bold">2️⃣ Domínio de Testes Atual (Para testar agora):</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <code className="text-amber-300 bg-zinc-950 px-2 py-1 rounded text-xs select-all font-mono font-bold">{window.location.hostname}</code>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-red-400 font-semibold text-[10px] bg-red-950/20 p-2 rounded-lg border border-red-500/20">
+                          ⚠️ ATENÇÃO: NÃO coloque "https://" nem barras "/" no final! Coloque somente o texto exato dos blocos acima (sem nada a mais), caso contrário o Firebase dará erro e não deixará salvar!
                         </p>
                         <p className="text-emerald-400 font-semibold mt-1.5 flex items-center gap-1">
                           ✨ Prontinho! A conexão de e-mail e login com o Google vão funcionar na hora sem dar erros de domínio!
@@ -2551,10 +2606,47 @@ export default function AdminPanel({
                   </div>
                   <div>
                     <span className="font-sans font-bold text-xs text-gray-200 block">PRÉ-VISUALIZAÇÃO DO LOGO</span>
-                    <span className="font-mono text-[9px] text-gray-500 leading-none">Verifique se está correto.</span>
+                    <span className="font-mono text-[9px] text-gray-400 leading-none">Verifique se está correto.</span>
                   </div>
                 </div>
               )}
+
+              {/* TUTORIAL GOOGLE ICON BRAND / FAVICON */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 mt-6 space-y-4">
+                <h5 className="font-sans font-black text-xs text-yellow-300 uppercase leading-tight tracking-tight flex items-center gap-1.5">
+                  🎨 COMO ADICIONAR SEU LOGO "CENTRAL PKXD" NO GOOGLE E SITE
+                </h5>
+                
+                <p className="text-[11px] text-gray-300 leading-relaxed font-sans mt-1">
+                  Para que o seu logotipo personalizado <strong>"Central PKXD"</strong> apareça no navegador como ícone do site (Favicon) e também na tela de login oficial do Google (OAuth), siga estes caminhos:
+                </p>
+
+                <div className="space-y-4 text-[10.5px] font-sans text-gray-350 leading-relaxed">
+                  <div className="p-3 bg-zinc-950/80 rounded-xl border border-white/5 space-y-1">
+                    <span className="text-yellow-400 font-bold uppercase text-[9.5px] block">🌐 1. COMO ALTERAR O LOGO E FAVICON DO SITE EM 1 CLIQUE:</span>
+                    <p>
+                      Basta pegar o link direto da imagem acima (pode ser o link de onde ela está hospedada ou do próprio Firebase Storage). Cole o link no campo <strong>"URL Direta do Logo"</strong> acima e clique em <strong>"Salvar Logo"</strong>. O site inteiro e o ícone da sua aba do navegador (Favicon) vão atualizar instantaneamente de forma dinâmica!
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-zinc-950/80 rounded-xl border border-white/5 space-y-1">
+                    <span className="text-cyan-400 font-bold uppercase text-[9.5px] block">🤖 2. INTEGRAR LOGO NA TELA DE LOGIN DO GOOGLE (OAUTH):</span>
+                    <p>
+                      Para colocar o logo na página de login do Google que aparece para seus usuários:
+                    </p>
+                    <ol className="list-decimal pl-4 mt-1 space-y-1 text-gray-400">
+                      <li>Acesse o console do Google Cloud: <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold hover:text-cyan-300 font-sans">console.cloud.google.com/apis/credentials/consent</a>.</li>
+                      <li>Selecione seu projeto <strong>{(firebaseConfig as any)?.projectId || 'pkxd-e817c'}</strong> no topo.</li>
+                      <li>Clique em <strong>Editar App</strong> (Edit App).</li>
+                      <li>No campo <strong>Logotipo do App</strong> (App Logo), faça upload desta mesma imagem "Central PKXD".</li>
+                      <li>Role até o final da página e clique em <strong>Salvar e Continuar</strong>.</li>
+                    </ol>
+                    <p className="text-[9.5px] text-zinc-500 mt-1">
+                      💡 Nota: O Google pode levar cerca de algumas horas para aprovar e aplicar o novo logotipo na tela de autenticação do Google, mas funcionará perfeitamente!
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

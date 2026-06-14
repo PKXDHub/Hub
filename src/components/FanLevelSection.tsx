@@ -9,6 +9,9 @@ interface FanLevelSectionProps {
   onLevelUp: () => void;
   soundEnabled: boolean;
   user?: any;
+  onLogin?: () => void;
+  onLoginRedirect?: () => void;
+  onLogout?: () => void;
 }
 
 interface RankedPlayer {
@@ -20,7 +23,15 @@ interface RankedPlayer {
   isCurrentUser?: boolean;
 }
 
-export default function FanLevelSection({ level, onLevelUp, soundEnabled, user }: FanLevelSectionProps) {
+export default function FanLevelSection({ 
+  level, 
+  onLevelUp, 
+  soundEnabled, 
+  user,
+  onLogin,
+  onLoginRedirect,
+  onLogout
+}: FanLevelSectionProps) {
   // XP tracker
   const [xp, setXp] = useState(() => {
     try {
@@ -168,6 +179,7 @@ export default function FanLevelSection({ level, onLevelUp, soundEnabled, user }
   // Merge database players with user's local latest stats
   useEffect(() => {
     let combined = [...dbPlayers];
+
     const activePlayerId = user?.uid || clientId;
     const hasMe = combined.some(p => p.id === activePlayerId);
     
@@ -332,6 +344,64 @@ export default function FanLevelSection({ level, onLevelUp, soundEnabled, user }
           </div>
         </div>
       </div>
+
+      {/* Connection/Login Banner for Fans */}
+      {!user || user.uid === 'admin_fallback' ? (
+        <div className="bg-gradient-to-r from-violet-600/20 via-indigo-600/10 to-transparent border-2 border-indigo-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="space-y-1 text-left">
+            <h4 className="text-sm sm:text-base font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Award className="w-5 h-5 text-yellow-300 animate-pulse" />
+              <span>Conecte sua Conta para entrar no Ranking Real! 🏆</span>
+            </h4>
+            <p className="text-xs text-gray-300 leading-normal max-w-2xl">
+              Seu perfil está como <strong className="text-orange-400 font-mono">{nickname}</strong> mas as estatísticas ficam apenas no seu navegador. Faça login rápido com o Google para salvar seu fã-level e se destacar na classificação dos fã-clubes oficiais!
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <button
+              onClick={() => {
+                if (soundEnabled) playTapSound();
+                if (onLogin) onLogin();
+              }}
+              className="px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 active:scale-95 text-white font-sans font-black text-xs uppercase tracking-wider rounded-2xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+            >
+              <User className="w-4 h-4" />
+              <span>Entrar Google Popup</span>
+            </button>
+            <button
+              onClick={() => {
+                if (soundEnabled) playTapSound();
+                if (onLoginRedirect) onLoginRedirect();
+              }}
+              className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-gray-300 font-sans font-black text-xs uppercase tracking-wider rounded-2xl cursor-pointer border border-zinc-700 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+              title="Clique se estiver no celular e o popup do Google for bloqueado"
+            >
+              <span>Login Celular 📱</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-emerald-600/20 to-transparent border-2 border-emerald-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg font-sans">
+          <div className="space-y-1 text-left">
+            <h4 className="text-sm sm:text-base font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 animate-pulse" />
+              <span>Você está Conectado em Tempo Real! ✅</span>
+            </h4>
+            <p className="text-xs text-gray-300 leading-normal">
+              Autenticado com sucesso como <strong className="text-emerald-300 font-mono underline">{user.email}</strong>. Suas conquistas, check-ins de foguinhos diários e níveis estão salvos com segurança de forma permanente.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (soundEnabled) playTapSound();
+              if (onLogout) onLogout();
+            }}
+            className="px-4 py-2.5 bg-zinc-800 hover:bg-red-950/40 text-gray-300 hover:text-red-200 font-sans font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer border border-zinc-700 transition-all flex items-center justify-center whitespace-nowrap"
+          >
+            Desconectar
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
