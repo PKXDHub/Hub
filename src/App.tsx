@@ -121,10 +121,33 @@ export default function App() {
   const [extraCountdownEnabled, setExtraCountdownEnabled] = useState(false);
 
   // Authentication & Admin levels
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      if (localStorage.getItem('pkxd_fallback_admin_logged') === 'true') {
+        return {
+          uid: 'admin_fallback',
+          email: 'kawanyuri35@gmail.com',
+          displayName: 'Kawanyuri (Admin)',
+        } as any;
+      }
+    } catch (e) {}
+    return null;
+  });
+  const [isAdmin, setIsAdmin] = useState(() => {
+    try {
+      if (localStorage.getItem('pkxd_fallback_admin_logged') === 'true') {
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  });
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  // Fallback passcode login states
+  const [useBackupPasscode, setUseBackupPasscode] = useState(false);
+  const [inputPasscode, setInputPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
 
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [fanLevel, setFanLevel] = useState(() => {
@@ -162,16 +185,34 @@ export default function App() {
   // Sync auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser && currentUser.email) {
-        const email = currentUser.email.toLowerCase();
-        if (email === 'kawanyuri35@gmail.com' || email === 'eukoosh@gmail.com') {
-          setIsAdmin(true);
+      if (currentUser) {
+        setUser(currentUser);
+        if (currentUser.email) {
+          const email = currentUser.email.toLowerCase();
+          if (email === 'kawanyuri35@gmail.com' || email === 'eukoosh@gmail.com') {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
         } else {
           setIsAdmin(false);
         }
       } else {
+        // If not authenticated via Google, check if we have fallback admin session in localStorage
+        try {
+          if (localStorage.getItem('pkxd_fallback_admin_logged') === 'true') {
+            setIsAdmin(true);
+            setUser({
+              uid: 'admin_fallback',
+              email: 'kawanyuri35@gmail.com',
+              displayName: 'Kawanyuri (Admin)',
+            } as any);
+            return;
+          }
+        } catch (e) {}
+
         setIsAdmin(false);
+        setUser(null);
       }
     });
     return () => unsubscribe();
@@ -487,9 +528,37 @@ export default function App() {
     }
   };
 
+  const handlePasscodeLogin = () => {
+    const validPasscodes = ['pkxd2026', 'admincentral', 'kawanyuri', 'centralpkxd'];
+    if (validPasscodes.includes(inputPasscode.trim().toLowerCase())) {
+      try {
+        localStorage.setItem('pkxd_fallback_admin_logged', 'true');
+      } catch (e) {}
+      setIsAdmin(true);
+      setUser({
+        uid: 'admin_fallback',
+        email: 'kawanyuri35@gmail.com',
+        displayName: 'Kawanyuri (Admin)',
+      } as any);
+      triggerAudio('success');
+      setNotifMessage("Senha de Admin correta! Acesso liberado! 🎉");
+      setInputPasscode('');
+      setPasscodeError('');
+      setUseBackupPasscode(false);
+      setTimeout(() => setNotifMessage(null), 4000);
+    } else {
+      setPasscodeError("Código de acesso incorreto. Tente novamente!");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      try {
+        localStorage.removeItem('pkxd_fallback_admin_logged');
+      } catch (e) {}
+      setUser(null);
+      setIsAdmin(false);
       triggerAudio('tap');
       setNotifMessage("Você deslogou com sucesso!");
       setTimeout(() => setNotifMessage(null), 4000);
@@ -1191,23 +1260,64 @@ export default function App() {
                     </p>
                   )}
 
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <div className="pt-2 flex flex-col items-center justify-center gap-4">
                     {user ? (
                       <button
                         onClick={handleLogout}
                         className="w-full sm:w-auto px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-sans font-black text-xs uppercase tracking-wider cursor-pointer border border-zinc-700"
                       >
-                        Sair da Conta Google
+                        Sair da Conta (Logout)
                       </button>
                     ) : (
-                      <button
-                        onClick={handleLogin}
-                        disabled={isAuthenticating}
-                        className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-indigo-900 active:border-b-0 cursor-pointer shadow-lg transition-transform duration-100 flex items-center justify-center gap-2"
-                      >
-                        <Lock className="w-4 h-4" />
-                        <span>{isAuthenticating ? 'ENTRANDO...' : 'LOGAR COM CONTA GOOGLE DO ADMIN'}</span>
-                      </button>
+                      <div className="w-full space-y-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                          <button
+                            onClick={handleLogin}
+                            disabled={isAuthenticating}
+                            className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-sans font-black text-xs sm:text-sm rounded-xl border-b-4 border-indigo-900 active:border-b-0 cursor-pointer shadow-lg transition-transform duration-100 flex items-center justify-center gap-2"
+                          >
+                            <Lock className="w-4 h-4" />
+                            <span>{isAuthenticating ? 'ENTRANDO...' : 'LOGAR COM CONTA GOOGLE DO ADMIN'}</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setUseBackupPasscode(!useBackupPasscode);
+                              setPasscodeError('');
+                            }}
+                            className="w-full sm:w-auto px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-sans font-black text-xs uppercase tracking-wider cursor-pointer border border-zinc-700"
+                          >
+                            {useBackupPasscode ? 'Cancelar' : 'Entrar com Código PIN'}
+                          </button>
+                        </div>
+
+                        {useBackupPasscode && (
+                          <div className="max-w-xs mx-auto p-4 bg-zinc-950/80 rounded-2xl border border-white/5 space-y-3">
+                            <p className="text-zinc-400 text-[11px] font-sans">Digite um código PIN de administrador válido para conectar:</p>
+                            <div className="flex gap-2">
+                              <input
+                                type="password"
+                                placeholder="Código PIN de Admin"
+                                value={inputPasscode}
+                                onChange={(e) => setInputPasscode(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handlePasscodeLogin();
+                                }}
+                                className="bg-zinc-900 text-white placeholder-zinc-600 text-xs px-3 py-2 rounded-xl border border-white/10 focus:outline-none focus:border-indigo-500 w-full"
+                              />
+                              <button
+                                onClick={handlePasscodeLogin}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold font-sans cursor-pointer"
+                              >
+                                Entrar
+                              </button>
+                            </div>
+                            {passcodeError && (
+                              <p className="text-red-400 text-[11px] font-sans text-left">{passcodeError}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
