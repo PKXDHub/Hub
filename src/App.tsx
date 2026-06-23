@@ -179,9 +179,32 @@ export default function App() {
     }
     return 1;
   });
+
+  const [fanXP, setFanXP] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkxd_fan_xp');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 0;
+  });
   
   const [newsToEdit, setNewsToEdit] = useState<NewsItem | null>(null);
   const [notifMessage, setNotifMessage] = useState<string | null>(null);
+
+  // Dynamic scroll position state to make alert notifications scroll position responsive!
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // New delay & notification states
   const [isDelayed, setIsDelayed] = useState(false);
@@ -748,8 +771,9 @@ export default function App() {
   };
 
   const handlePasscodeLogin = () => {
-    const validPasscodes = ['pkxd2026', 'admincentral', 'kawanyuri', 'centralpkxd'];
-    if (validPasscodes.includes(inputPasscode.trim().toLowerCase())) {
+    // Strengthened security passcodes as requested to avoid simple brute-force logins
+    const validPasscodes = ['pkxdcentral2026_portal_admin', 'kawanyuri_adm_seguro_99', 'central_pkxd_super_acesso_real'];
+    if (validPasscodes.includes(inputPasscode.trim())) {
       try {
         localStorage.setItem('pkxd_fallback_admin_logged', 'true');
       } catch (e) {}
@@ -1310,15 +1334,79 @@ export default function App() {
   };
 
   // Interactive leveling feature
-  const handleUpgradeLevel = () => {
+  const handleLevelUpCallback = () => {
     const nextLevel = fanLevel + 1;
     setFanLevel(nextLevel);
     localStorage.setItem('pkxd_fan_level', nextLevel.toString());
     triggerAudio('levelUp');
-    
-    // Show high-quality flash notification
     setNotifMessage(`LEVEL UP! Você subiu para o Nível de Fã ${nextLevel}! 🌟`);
     setTimeout(() => setNotifMessage(null), 4000);
+  };
+
+  const handleAddFanXP = (amount: number, reason: string) => {
+    let nextXp = fanXP + amount;
+    setNotifMessage(`+${amount} XP ganho: ${reason}! ⚡`);
+    setTimeout(() => setNotifMessage(null), 4000);
+
+    if (nextXp >= 100) {
+      nextXp = nextXp - 100;
+      handleLevelUpCallback();
+    } else {
+      triggerAudio('success');
+    }
+    setFanXP(nextXp);
+    localStorage.setItem('pkxd_fan_xp', nextXp.toString());
+  };
+
+  const handleRatePastSpoiler = async (id: string, rating: number) => {
+    try {
+      const target = pastSpoilers.find(s => s.id === id);
+      if (!target) return;
+
+      const currentSum = target.ratingSum || 0;
+      const currentCount = target.ratingCount || 0;
+
+      const nextSum = currentSum + rating;
+      const nextCount = currentCount + 1;
+
+      // Sync to Firestore
+      const spoilerRef = doc(db, 'past_spoilers', id);
+      await setDoc(spoilerRef, {
+        ratingSum: nextSum,
+        ratingCount: nextCount
+      }, { merge: true });
+
+      // Add XP for rating
+      handleAddFanXP(15, 'Avaliação de Spoiler 🔮');
+    } catch (err: any) {
+      console.warn("Erro ao registrar avaliação base:", err);
+      handleFirestoreError(err, OperationType.WRITE, 'past_spoilers');
+    }
+  };
+
+  const handleReactPastSpoiler = async (id: string, emoji: string) => {
+    try {
+      const target = pastSpoilers.find(s => s.id === id);
+      if (!target) return;
+
+      const currentReactions = target.reactions || {};
+      const nextReactionCount = (currentReactions[emoji] || 0) + 1;
+
+      const updatedReactions = {
+        ...currentReactions,
+        [emoji]: nextReactionCount
+      };
+
+      const spoilerRef = doc(db, 'past_spoilers', id);
+      await setDoc(spoilerRef, {
+        reactions: updatedReactions
+      }, { merge: true });
+
+      handleAddFanXP(5, `Reação ${emoji} a Spoiler 🔮`);
+    } catch (err: any) {
+      console.warn("Erro ao registrar reação ao spoiler:", err);
+      handleFirestoreError(err, OperationType.WRITE, 'past_spoilers');
+    }
   };
 
   return (
@@ -1331,30 +1419,59 @@ export default function App() {
 
       {/* Upper Micro banner for System Alerts/Gamer Levels */}
       <div className="bg-gradient-to-r from-purple-800 via-pink-600 to-purple-900 py-2.5 px-4 text-center text-white text-xs font-bold leading-tight flex flex-wrap items-center justify-center gap-3 shadow-md relative z-30 select-none border-b-2 border-white/10">
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <Trophy className="w-4 h-4 text-yellow-300 fill-yellow-300" />
           Nível de Explorador: <strong className="text-yellow-300">Fã Lvl {fanLevel}</strong>
+          <span className="text-zinc-300 px-1.5 py-0.5 rounded-md bg-black/30 font-mono text-[10px]">
+            {fanXP}% XP
+          </span>
         </span>
-        <button 
-          onClick={handleUpgradeLevel}
-          className="bg-black/40 hover:bg-black/60 border border-white/20 active:scale-95 duration-100 p-1 px-3.5 rounded-full text-[10px] font-black uppercase tracking-wider text-yellow-300 hover:text-white cursor-pointer"
-        >
-          ⚡ Ganhar XP Grátis!
-        </button>
         <span className="opacity-40 font-mono hidden md:inline">|</span>
         <span className="hidden md:inline text-[11px] font-mono text-pink-100">
           Notícias atualizadas em tempo real para fãs do PK XD
         </span>
       </div>
 
-      {/* Floating interactive alerts display */}
+      {/* Floating interactive alerts display (Completely redesigned for scroll-responsive UI/UX as requested!) */}
       {notifMessage && (
-        <div id="floating-celebration" className="fixed bottom-6 right-6 z-50 max-w-sm bg-gradient-to-br from-yellow-400 to-pink-500 text-black font-sans font-black p-4 rounded-2xl border-4 border-white shadow-[0_12px_24px_rgba(0,0,0,0.4)] animate-bounce text-left flex items-start gap-3">
-          <BellRing className="w-6 h-6 flex-shrink-0 animate-swing text-purple-900" />
-          <div>
-            <h5 className="text-[11px] font-mono tracking-widest text-purple-950 uppercase">Conquista Central!</h5>
-            <p className="text-sm text-purple-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] leading-tight">{notifMessage}</p>
+        <div 
+          id="floating-celebration" 
+          className={`fixed left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-zinc-950/95 border-2 backdrop-blur-md text-white p-4 rounded-2xl transition-all duration-300 text-left flex items-start gap-3 relative overflow-hidden ${
+            scrollY > 400 
+              ? 'bottom-24 border-pink-500/85 shadow-[0_-12px_35px_rgba(236,72,153,0.35)] animate-slide-up' 
+              : 'top-24 border-cyan-400/85 shadow-[0_12px_35px_rgba(34,211,238,0.25)] animate-scale-up'
+          }`}
+        >
+          {/* Neon side indicator */}
+          <div className={`absolute top-0 bottom-0 left-0 w-1.5 rounded-l-md bg-gradient-to-b ${
+            scrollY > 400 
+              ? 'from-pink-500 via-rose-500 to-yellow-300' 
+              : 'from-cyan-400 via-pink-500 to-yellow-300'
+          }`} />
+          
+          <div className={`p-1.5 border rounded-xl flex-shrink-0 animate-pulse ${
+            scrollY > 400 
+              ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' 
+              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+          }`}>
+            <BellRing className="w-5 h-5 animate-swing" />
           </div>
+          <div className="flex-1 space-y-0.5 text-left pl-1">
+            <h5 className={`text-[10px] sm:text-[11px] font-mono tracking-widest font-extrabold uppercase flex items-center justify-between ${
+              scrollY > 400 ? 'text-pink-400' : 'text-cyan-300'
+            }`}>
+              <span>ALERTA CENTRAL PK XD</span>
+              <span className="text-[9px] text-gray-500 font-normal">AGORA</span>
+            </h5>
+            <p className="text-xs sm:text-xs font-sans font-black text-gray-150 leading-relaxed">{notifMessage}</p>
+          </div>
+          <button 
+            onClick={() => setNotifMessage(null)}
+            className="text-gray-400 hover:text-white text-xs pl-1.5 cursor-pointer font-bold active:scale-95 flex-shrink-0"
+            title="Fechar Notificação"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -1390,35 +1507,19 @@ export default function App() {
       <nav id="nav-header" className="sticky top-0 z-20 bg-purple-600 border-b-4 border-purple-800 select-none py-3.5 px-4 sm:px-6 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
-          {/* Logo representation */}
-          <div className="flex items-center gap-3">
-            {siteLogoUrl ? (
-              <img 
-                src={siteLogoUrl} 
-                alt="Logo PK XD Central" 
-                className="w-10 h-10 object-cover rounded-2xl border-2 border-white shadow-lg transform rotate-[-3deg] flex-shrink-0"
-                onError={(e) => {
-                  // Fallback if URL is broken or not direct
-                  (e.target as any).style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-450 border-2 border-white flex items-center justify-center font-sans font-black text-white text-lg tracking-wider shadow-lg transform rotate-[-3deg] flex-shrink-0">
-                PC
-              </div>
-            )}
-            <div>
-              <h1 className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-white uppercase drop-shadow-[0_2px_0_rgba(0,0,0,0.4)] transform skew-x-[-2deg]">
-                PKXD <span className="text-yellow-300">Central</span>
-              </h1>
-              <p className="font-sans text-[9px] sm:text-[10px] text-purple-200 font-extrabold uppercase tracking-widest leading-none">
-                Notícias, Spoilers e Códigos!
-              </p>
-            </div>
+          {/* Brand Name - Site icon removed as requested & changed to PKXD Hub */}
+          <div>
+            <h1 className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-white uppercase drop-shadow-[0_2px_0_rgba(0,0,0,0.4)] transform skew-x-[-2deg]">
+              PKXD <span className="text-yellow-300">Hub</span>
+            </h1>
+            <p className="font-sans text-[9px] sm:text-[10px] text-purple-200 font-extrabold uppercase tracking-widest leading-none">
+              Notícias, Spoilers e Códigos!
+            </p>
           </div>
 
           {/* Action Links */}
           <div className="flex items-center gap-2">
+
             {/* Notification center bell with badge! */}
             <button 
               type="button"
@@ -1481,7 +1582,7 @@ export default function App() {
 
           {/* Subtitle description */}
           <p className="font-sans text-sm sm:text-base text-gray-300 leading-relaxed max-w-xl mx-auto">
-            Seja bem-vindo ao portal fan-hub do <strong>PKXD Central</strong>! Fique ligado nas datas, resgate as joias secretas, junte-se à nossa gigante comunidade do WhatsApp e veja as revelações de spoilers toda segunda-feira.
+            Seja bem-vindo ao portal fan-hub do <strong>PKXD Hub</strong>! Fique ligado nas datas, resgate as joias secretas, junte-se à nossa gigante comunidade do WhatsApp e veja as revelações de spoilers toda segunda-feira.
           </p>
 
           {/* WhatsApp Direct CTA mini-badge */}
@@ -1868,7 +1969,36 @@ export default function App() {
                     // Scroll up to admin panel to see editing state
                     document.getElementById('admin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
+                  onRate={handleRatePastSpoiler}
+                  onReact={handleReactPastSpoiler}
                 />
+              </div>
+
+              {/* CANDIDATAR-SE A ADMIN BANNER - Placed exactly below the spoiler section as requested */}
+              <div className="max-w-4xl mx-auto mt-8 mb-6 px-4 sm:px-0" id="admin-application-banner-under-spoilers">
+                <div className="bg-gradient-to-r from-purple-900/60 via-indigo-950/70 to-zinc-900 border-2 border-purple-500/30 rounded-2xl p-6 shadow-[0_4px_25px_rgba(139,92,246,0.15)] hover:shadow-[0_4px_35px_rgba(139,92,246,0.25)] hover:border-purple-500/50 transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                  {/* Glowing neon side effect */}
+                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-pink-500 to-purple-600" />
+                  
+                  <div className="space-y-2 text-center md:text-left">
+                    <h4 className="font-sans font-black text-lg text-white uppercase tracking-tight flex items-center gap-2 justify-center md:justify-start font-bold">
+                      <span>✨ Quer fazer parte da equipe PKXD Hub?</span>
+                    </h4>
+                    <p className="font-sans text-xs text-gray-300 max-w-xl leading-relaxed">
+                      Estamos recrutando novos administradores focados, criativos e cheios de energia! Se você ama o PK XD, quer ajudar a organizar spoilers, posts de novidades e gerenciar o fã-clube oficial do site, inscreva-se agora mesmo!
+                    </p>
+                  </div>
+
+                  <a 
+                    href="https://forms.gle/LGDPe1SrsTdcwNZCA"
+                    target="_blank" 
+                    rel="noreferrer"
+                    onClick={() => triggerAudio('tap')}
+                    className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-650 hover:from-pink-400 hover:to-indigo-550 active:scale-[0.98] text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg border border-white/20 cursor-pointer flex items-center justify-center gap-2 transition-all flex-shrink-0 animate-pulse hover:animate-none"
+                  >
+                    <span>🔐 Candidatar para Admin 🌟</span>
+                  </a>
+                </div>
               </div>
             </>
           );
@@ -1878,7 +2008,9 @@ export default function App() {
         <div className="max-w-4xl mx-auto" id="fan-level-section-wrapper">
           <FanLevelSection 
             level={fanLevel}
-            onLevelUp={handleUpgradeLevel}
+            xp={fanXP}
+            onAddXP={handleAddFanXP}
+            onLevelUp={handleLevelUpCallback}
             soundEnabled={soundEnabled}
             user={user}
             onLogin={handleLogin}
@@ -1887,6 +2019,7 @@ export default function App() {
             onEmailLogin={handleEmailLogin}
             onEmailRegister={handleEmailRegister}
             authError={googleAuthError}
+            isAdmin={isAdmin}
           />
         </div>
 
@@ -1894,6 +2027,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto" id="promo-code-redeemer-section-wrapper">
           <PromoCodeRedeemer 
             videos={newsList.filter(item => {
+              if (item.id === '1' || item.id === '2') return false;
               const timestamp = parseInt(item.id);
               if (isNaN(timestamp)) return true;
               // Ignore filtering for static fallback default contents (low ID integer markers)
@@ -1931,11 +2065,12 @@ export default function App() {
             isAdmin={isAdmin}
             onDelete={handleDeleteTheory}
             onLike={handleLikeTheory}
+            onAddXP={handleAddFanXP}
           />
         </div>
 
         {/* WhatsApp Channel Promo Feature banner */}
-        <WhatsAppPromo channelUrl={WHATSAPP_CHANNEL_URL} />
+        <WhatsAppPromo channelUrl={WHATSAPP_CHANNEL_URL} onAddXP={handleAddFanXP} />
 
         {/* Extra Information: FAQ/Guide cards */}
         <div className="bg-zinc-900/40 rounded-3xl border border-white/5 p-6 sm:p-8 space-y-6 text-left select-none">
@@ -1981,22 +2116,10 @@ export default function App() {
       <footer id="main-footer" className="max-w-7xl mx-auto px-4 sm:px-6 pt-16 mt-8 select-none border-t border-white/10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           
-          {/* Logo brand */}
+          {/* Logo brand - Removed site icon and updated title for PKXD Hub */}
           <div className="flex items-center gap-2">
-            {siteLogoUrl ? (
-              <img 
-                src={siteLogoUrl} 
-                alt="Logo Rodapé PK XD Central" 
-                className="w-7 h-7 object-cover rounded-lg border border-white/20"
-                onError={(e) => { (e.target as any).style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-7 h-7 rounded-lg bg-pink-500 flex items-center justify-center font-sans font-extrabold text-white text-xs">
-                PC
-              </div>
-            )}
             <strong className="font-sans text-sm text-gray-300 uppercase tracking-wider">
-              PK XD Central • 2026
+              PKXD Hub • 2026
             </strong>
           </div>
 
@@ -2007,25 +2130,24 @@ export default function App() {
         </div>
       </footer>
 
-      {/* FLOATING SECTIONS MENU BUTTON */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* FLOATING SECTIONS MENU BUTTON - Redesigned to be delicate, small and beautiful as requested */}
+      <div className="fixed bottom-6 right-6 z-45">
         <button 
           onClick={() => {
             setIsNavMenuOpen(!isNavMenuOpen);
             triggerAudio('tap');
           }}
-          className="p-4 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-650 text-white rounded-full shadow-[0_0_20px_rgba(236,72,153,0.5)] hover:shadow-[0_0_35px_rgba(168,85,247,0.75)] border-2 border-white/35 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 group font-sans text-xs font-black uppercase tracking-wider relative"
-          title="🧭 Menu de Seções"
+          className="w-12 h-12 bg-zinc-950/95 hover:bg-purple-950 text-cyan-300 hover:text-yellow-300 rounded-full shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_4px_25px_rgba(34,211,238,0.55)] border-2 border-cyan-400/60 active:scale-90 transition-all duration-200 cursor-pointer flex items-center justify-center group relative"
+          title="Navegar pelas Seções"
           id="floating-navigation-compass-trigger"
         >
-          {/* Inner pulse ring */}
-          <span className="absolute inset-0 rounded-full bg-pink-500/20 animate-ping pointer-events-none" />
+          {/* Subtle neon pulse background */}
+          <span className="absolute -inset-1 rounded-full bg-cyan-400/10 blur-sm pointer-events-none group-hover:bg-cyan-400/25 transition-all duration-300" />
+          <span className="absolute inset-0 rounded-full bg-cyan-500/10 animate-ping pointer-events-none" />
           
-          <Compass className="w-5 h-5 animate-spin-slow group-hover:rotate-90 duration-500 text-cyan-200 group-hover:text-yellow-300" />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-out font-black text-[11px] tracking-widest text-[#fff]">
-            Navegar Seções
-          </span>
-          <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-purple-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-bounce border border-white/20">
+          <Compass className="w-5 h-5 animate-spin-slow group-hover:rotate-45 duration-500 text-cyan-400 group-hover:text-yellow-300" />
+          
+          <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow border border-white/20 uppercase tracking-widest">
             NAV
           </span>
         </button>
@@ -2079,7 +2201,7 @@ export default function App() {
                       { id: 'promo-code-redeemer-section-wrapper', title: '🎟️ Resgatar Códigos', desc: 'Promo codes oficiais ativos nos últimos 7 dias' },
                       { id: 'featured-videos-section-wrapper', title: '🎥 Vídeos Oficiais Destaques', desc: 'Gameplay e tutoriais importantes selecionados' },
                       { id: 'best-shorts-section-wrapper', title: '📱 Shorts Virais do PK XD', desc: 'Vídeos curtas e engraçados da comunidade' },
-                      { id: 'theories-section-wrapper', title: '📜 Teorias PKXD Central', desc: 'Discussões semanais feitas pelos fãs' },
+                      { id: 'theories-section-wrapper', title: '📜 Teorias PKXD Hub', desc: 'Discussões semanais feitas pelos fãs' },
                     ].map((section) => (
                       <button
                         key={section.id}
@@ -2112,8 +2234,20 @@ export default function App() {
                 </div>
 
                 {/* Quick Info footer inside drawer */}
-                <div className="p-6 border-t border-white/10 bg-black/40 text-center space-y-2">
-                  <span className="text-[10px] text-gray-500 block">DÚVIDAS OU COMUNICADOS?</span>
+                <div className="p-6 border-t border-white/10 bg-black/40 text-center space-y-2.5">
+                  <span className="text-[10px] text-gray-500 block">ADMINISTRAÇÃO & COMUNICADOS</span>
+                  
+                  {/* Candidate to Admin Form button */}
+                  <a 
+                    href="https://forms.gle/LGDPe1SrsTdcwNZCA"
+                    target="_blank" 
+                    rel="noreferrer"
+                    onClick={() => triggerAudio('tap')}
+                    className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-sans font-black text-xs uppercase tracking-wide rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md border border-indigo-500/30 cursor-pointer hover:scale-[1.01]"
+                  >
+                    <span>🔐 Candidatar a Admin 🌟</span>
+                  </a>
+
                   <a 
                     href={WHATSAPP_CHANNEL_URL} 
                     target="_blank" 

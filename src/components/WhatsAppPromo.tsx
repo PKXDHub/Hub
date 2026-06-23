@@ -4,11 +4,19 @@ import { playTapSound, playSuccessSound } from '../utils/audio';
 
 interface WhatsAppPromoProps {
   channelUrl: string;
+  onAddXP?: (amount: number, reason: string) => void;
 }
 
-export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
+export default function WhatsAppPromo({ channelUrl, onAddXP }: WhatsAppPromoProps) {
   const [likes, setLikes] = useState(384);
   const [hasLiked, setHasLiked] = useState(false);
+  const [xpClaimed, setXpClaimed] = useState(() => {
+    try {
+      return localStorage.getItem('pkxd_whatsapp_xp_claimed') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -26,6 +34,16 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
 
   const handleJoinClick = () => {
     playLevelUpSound();
+    
+    // Award 25 XP if not already claimed
+    if (!xpClaimed && onAddXP) {
+      onAddXP(25, 'Comunidade WhatsApp 🟢');
+      setXpClaimed(true);
+      try {
+        localStorage.setItem('pkxd_whatsapp_xp_claimed', 'true');
+      } catch {}
+    }
+
     // Also redirect
     window.open(channelUrl, '_blank', 'noreferrer');
   };
@@ -70,7 +88,7 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
               </div>
               <div>
                 <h4 className="font-sans font-bold text-sm text-gray-100 flex items-center gap-1.5">
-                  PK XD Central
+                  PKXD Hub
                   <span className="bg-emerald-500 text-[9px] font-black tracking-wider text-black px-1.5 py-0.5 rounded-full flex items-center">
                     ✓
                   </span>
@@ -82,9 +100,9 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
             {/* Chat Body */}
             <div className="p-4 space-y-4 max-h-[220px] overflow-y-auto bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat bg-[size:180px]">
               
-              {/* Message bubble 1 */}
+               {/* Message bubble 1 */}
               <div className="bg-[#1f2c34] text-gray-250 p-3 rounded-2xl rounded-tl-sm max-w-[85%] text-xs shadow-md border-l-4 border-cyan-400">
-                <span className="text-cyan-400 font-extrabold text-[10px] block mb-1">📢 COMUNIDADE CENTRAL</span>
+                <span className="text-cyan-400 font-extrabold text-[10px] block mb-1">📢 COMUNIDADE PKXD HUB</span>
                 Fala galera de PK XD! 🕹️ Aqui postamos com total exclusividade os spoilers das novas atualizações e códigos ativos!
                 <span className="text-[9px] text-gray-400 text-right block mt-1.5">17:28</span>
               </div>
@@ -147,15 +165,21 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
 
           {/* Main Join CTA Button */}
           <div className="pt-2 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleJoinClick}
-                className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-black font-sans font-black text-sm sm:text-lg rounded-2xl border-b-4 border-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(16,185,129,0.4)] active:translate-y-1 active:border-b-0 cursor-pointer flex flex-wrap items-center justify-center gap-2 group text-center"
-              >
-                <MessageSquare className="w-5 h-5 fill-black flex-shrink-0" />
-                <span className="break-words">ENTRAR NO CANAL AGORA</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform flex-shrink-0" />
-              </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="relative w-full sm:w-auto">
+                <button
+                  onClick={handleJoinClick}
+                  className="w-full px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-green-500 text-black font-sans font-black text-sm sm:text-lg rounded-2xl border-b-4 border-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(16,185,129,0.4)] active:translate-y-1 active:border-b-0 cursor-pointer flex flex-wrap items-center justify-center gap-2 group text-center"
+                >
+                  <MessageSquare className="w-5 h-5 fill-black flex-shrink-0" />
+                  <span className="break-words">ENTRAR NO CANAL AGORA</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform flex-shrink-0" />
+                </button>
+                {/* Floating Badge */}
+                <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-md whitespace-nowrap border border-black/10">
+                  {xpClaimed ? "✓ +25 XP Coletado" : "⚡ +25 XP Grátis!"}
+                </div>
+              </div>
 
               <button
                 onClick={() => {
@@ -174,7 +198,7 @@ export default function WhatsAppPromo({ channelUrl }: WhatsAppPromoProps) {
             </div>
 
             <p className="font-sans text-xs text-gray-400">
-              ⚡ <strong className="text-emerald-300">Gostou da Central?</strong> Copie o link do canal ou use o botão para compartilhar os spoilers e códigos legítimos com todo o seu clã de amigos no WhatsApp!
+              ⚡ <strong className="text-emerald-300">Gostou do Hub?</strong> Copie o link do canal ou use o botão para compartilhar os spoilers e códigos legítimos com todo o seu clã de amigos no WhatsApp!
             </p>
           </div>
 

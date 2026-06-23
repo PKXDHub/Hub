@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award } from 'lucide-react';
+import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award, Instagram, Lock } from 'lucide-react';
 import { playTapSound, playSuccessSound, playLevelUpSound } from '../utils/audio';
-import { collection, doc, setDoc, onSnapshot, query, limit } from 'firebase/firestore';
+import { collection, doc, setDoc, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 
 const maskEmail = (email?: string | null): string => {
@@ -18,6 +18,8 @@ const maskEmail = (email?: string | null): string => {
 
 interface FanLevelSectionProps {
   level: number;
+  xp: number;
+  onAddXP: (amount: number, reason: string) => void;
   onLevelUp: () => void;
   soundEnabled: boolean;
   user?: any;
@@ -27,6 +29,7 @@ interface FanLevelSectionProps {
   onEmailLogin?: (email: string, pass: string) => void;
   onEmailRegister?: (email: string, pass: string, nickname: string) => void;
   authError?: string | null;
+  isAdmin?: boolean;
 }
 
 interface RankedPlayer {
@@ -36,10 +39,14 @@ interface RankedPlayer {
   xp: number;
   flames: number;
   isCurrentUser?: boolean;
+  instagram?: string;
+  instagramPublic?: boolean;
 }
 
 export default function FanLevelSection({ 
   level, 
+  xp,
+  onAddXP,
   onLevelUp, 
   soundEnabled, 
   user,
@@ -48,21 +55,9 @@ export default function FanLevelSection({
   onLogout,
   onEmailLogin,
   onEmailRegister,
-  authError: outerAuthError
+  authError: outerAuthError,
+  isAdmin = false
 }: FanLevelSectionProps) {
-  // XP tracker
-  const [xp, setXp] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pkxd_fan_xp');
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        return isNaN(parsed) ? 0 : parsed;
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-    return 0;
-  });
 
   // Daily claim state
   const [hasClaimedDaily, setHasClaimedDaily] = useState(() => {
@@ -102,6 +97,29 @@ export default function FanLevelSection({
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nickInput, setNickInput] = useState(nickname);
 
+  // Instagram profile local & form states as requested
+  const [instagram, setInstagram] = useState(() => {
+    try {
+      return localStorage.getItem('pkxd_user_instagram') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [instagramPublic, setInstagramPublic] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkxd_user_instagram_public');
+      return saved === 'false' ? false : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [instagramForm, setInstagramForm] = useState('');
+  const [instagramPublicForm, setInstagramPublicForm] = useState(true);
+
+  const [instaInput, setInstaInput] = useState('');
+  const [instaPublicInput, setInstaPublicInput] = useState(true);
+
   const [notif, setNotif] = useState<string | null>(null);
   
   // Email and Password Login / Registration states
@@ -132,9 +150,135 @@ export default function FanLevelSection({
   const [dbPlayers, setDbPlayers] = useState<RankedPlayer[]>([]);
   const [leaderboard, setLeaderboard] = useState<RankedPlayer[]>([]);
 
+  // ==========================================
+  // NEW INTERACTIVE XP GAINING METHODS STATES
+  // ==========================================
+  const [activeXpTab, setActiveXpTab] = useState<'daily' | 'wheel' | 'chest'>('daily');
+
+  // A. Lucky Wheel States
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelResult, setWheelResult] = useState<{ amount: number; message: string } | null>(null);
+  const [wheelCooldown, setWheelCooldown] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('pkxd_next_wheel_spin');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [wheelTimeLeft, setWheelTimeLeft] = useState(0);
+
   useEffect(() => {
-    localStorage.setItem('pkxd_fan_xp', xp.toString());
-  }, [xp]);
+    if (wheelCooldown <= 0) return;
+    const updateTimer = () => {
+      const now = Date.now();
+      const difference = Math.max(0, Math.ceil((wheelCooldown - now) / 1000));
+      setWheelTimeLeft(difference);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [wheelCooldown]);
+
+  // Spin Lucky Wheel algorithm
+  const handleSpinWheel = () => {
+    if (isSpinning || wheelTimeLeft > 0) return;
+    setIsSpinning(true);
+    setWheelResult(null);
+    if (soundEnabled) playTapSound();
+
+    setTimeout(() => {
+      const rewards = [
+        { amount: 15, text: "⭐ Super Sorte" },
+        { amount: 25, text: "🔥 Brilho de Fogo" },
+        { amount: 10, text: "⚡ Gíria Cósmica" },
+        { amount: 30, text: "👑 Baú Lendário!" },
+        { amount: 15, text: "🔮 Orbe Divino" },
+        { amount: 20, text: "🛸 Nave do Admin" }
+      ];
+      const selected = rewards[Math.floor(Math.random() * rewards.length)];
+      setWheelResult({ amount: selected.amount, message: selected.text });
+      setIsSpinning(false);
+
+      // Award XP
+      addXP(selected.amount, `${selected.text} da Roleta! 🎡`);
+
+      // Set 3-hour cooldown
+      const nextSpinTime = Date.now() + 3 * 60 * 60 * 1000;
+      setWheelCooldown(nextSpinTime);
+      try {
+        localStorage.setItem('pkxd_next_wheel_spin', nextSpinTime.toString());
+      } catch {}
+    }, 2400);
+  };
+
+  // B. PK XD Secret Mystery Chest States
+  const [chestTaps, setChestTaps] = useState(0);
+  const [chestMaxTaps] = useState(8);
+  const [isChestBroken, setIsChestBroken] = useState(false);
+  const [chestReward, setChestReward] = useState<{ amount: number; name: string; rarity: string } | null>(null);
+  const [chestCooldown, setChestCooldown] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('pkxd_next_chest_hunt');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [chestTimeLeft, setChestTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (chestCooldown <= 0) return;
+    const updateTimer = () => {
+      const now = Date.now();
+      const difference = Math.max(0, Math.ceil((chestCooldown - now) / 1000));
+      setChestTimeLeft(difference);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [chestCooldown]);
+
+  const handleTapChest = () => {
+    if (isChestBroken || chestTimeLeft > 0) return;
+    
+    const nextTaps = chestTaps + 1;
+    setChestTaps(nextTaps);
+    if (soundEnabled) playTapSound();
+
+    if (nextTaps >= chestMaxTaps) {
+      setIsChestBroken(true);
+      if (soundEnabled) playSuccessSound();
+
+      const standardLoot = [
+        { amount: 15, name: "⚡ Super Gema Verde", rarity: "Raro" },
+        { amount: 20, name: "🛸 Turbina de Gravidade Zero", rarity: "Épico" },
+        { amount: 25, name: "🕶️ Óculos Retro-Tech do Admin", rarity: "Lendário" },
+        { amount: 15, name: "🎒 Mochila Foguete de Neon", rarity: "Raro" },
+        { amount: 30, name: "⭐ Armadura Suprema PK XD", rarity: "Lendário" },
+        { amount: 20, name: "🐲 Drone Companheiro Fantasma", rarity: "Épico" }
+      ];
+      const selected = standardLoot[Math.floor(Math.random() * standardLoot.length)];
+      setChestReward(selected);
+
+      // Award XP
+      addXP(selected.amount, `Abriu Baú Secreto: encontrou ${selected.name}! 🎁`);
+
+      // Set 10-minute cooldown
+      const nextChestTime = Date.now() + 10 * 60 * 1000;
+      setChestCooldown(nextChestTime);
+      try {
+        localStorage.setItem('pkxd_next_chest_hunt', nextChestTime.toString());
+      } catch {}
+    }
+  };
+
+  const handleResetChest = () => {
+    setChestTaps(0);
+    setIsChestBroken(false);
+    setChestReward(null);
+    if (soundEnabled) playTapSound();
+  };
 
   useEffect(() => {
     localStorage.setItem('pkxd_fire_streak', fireStreak.toString());
@@ -161,6 +305,8 @@ export default function FanLevelSection({
           level: Number(level) || 1,
           xp: Number(xp) || 0,
           flames: Number(fireStreak) || 0,
+          instagram: instagram || '',
+          instagramPublic: instagramPublic !== false,
           updatedAt: Date.now()
         };
 
@@ -179,7 +325,7 @@ export default function FanLevelSection({
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [user, nickname, level, xp, fireStreak]);
+  }, [user, nickname, level, xp, fireStreak, instagram, instagramPublic]);
 
   // Listen to top players from Firestore collection
   useEffect(() => {
@@ -196,7 +342,9 @@ export default function FanLevelSection({
             name: data.name || 'Fã Secreto',
             level: Number(data.level) || 1,
             xp: Number(data.xp) || 0,
-            flames: Number(data.flames) || 0
+            flames: Number(data.flames) || 0,
+            instagram: data.instagram || '',
+            instagramPublic: data.instagramPublic !== false
           });
         }
       });
@@ -221,8 +369,10 @@ export default function FanLevelSection({
         name: user ? nickname : `${nickname} (Sem Login)`,
         level: level,
         xp: xp,
-        flames: fireStreak,
-        isCurrentUser: true
+         flames: fireStreak,
+        isCurrentUser: true,
+        instagram: instagram,
+        instagramPublic: instagramPublic
       });
     } else {
       combined = combined.map(p => {
@@ -233,7 +383,9 @@ export default function FanLevelSection({
             level: level,
             xp: xp,
             flames: fireStreak,
-            isCurrentUser: true
+            isCurrentUser: true,
+            instagram: instagram,
+            instagramPublic: instagramPublic
           };
         }
         return p;
@@ -247,21 +399,13 @@ export default function FanLevelSection({
 
     combined.sort((a, b) => computeScore(b) - computeScore(a));
     setLeaderboard(combined);
-  }, [dbPlayers, user, clientId, nickname, level, xp, fireStreak]);
+  }, [dbPlayers, user, clientId, nickname, level, xp, fireStreak, instagram, instagramPublic]);
 
   const addXP = (amount: number, reason: string) => {
     if (soundEnabled) playSuccessSound();
-    
-    let newXp = xp + amount;
     setNotif(`+${amount} XP: ${reason}! ⚡`);
     setTimeout(() => setNotif(null), 3000);
-
-    if (newXp >= 100) {
-      if (soundEnabled) playLevelUpSound();
-      newXp = newXp - 100;
-      onLevelUp(); // Trigger level up callback
-    }
-    setXp(newXp);
+    onAddXP(amount, reason);
   };
 
   const handleClaimDaily = () => {
@@ -279,10 +423,35 @@ export default function FanLevelSection({
     addXP(50, "Coleta Diária 🔥 +1 FOGUINHO!");
   };
 
+  const handleDeletePlayer = async (playerId: string, playerName: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o fã "${playerName}" do ranking?`)) {
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'leaderboard', playerId));
+      setNotif(`Fã ${playerName} excluído do ranking! 🗑️`);
+      if (soundEnabled) playTapSound();
+      setTimeout(() => setNotif(null), 3000);
+    } catch (err) {
+      console.error("Erro ao excluir fã:", err);
+      setNotif(`❌ Erro ao excluir fã.`);
+      setTimeout(() => setNotif(null), 3000);
+    }
+  };
+
   const saveNickname = () => {
     playTapSound();
     const clean = nickInput.trim().replace(/\s+/g, '_');
     if (clean.length > 0) {
+      const isDuplicate = dbPlayers.some(
+        p => p.id !== activePlayerId && p.name.trim().toLowerCase() === clean.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        setNotif(`❌ Apelido "${clean}" já está em uso! Escolha outro.`);
+        setTimeout(() => setNotif(null), 3500);
+        return;
+      }
+
       setNickname(clean);
       setIsEditingNickname(false);
       setNotif(`Apelido alterado para ${clean}! 👤`);
@@ -309,7 +478,7 @@ export default function FanLevelSection({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-orange-400 font-extrabold text-xs uppercase tracking-wider">
             <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-            <span>PKXD Central • Sequência de Fogos</span>
+            <span>PKXD Hub • Sequência de Fogos</span>
           </div>
           <h3 className="font-sans font-black text-2xl tracking-tight text-white uppercase">
             🔥 Central do Foguinho & XP Diário
@@ -332,27 +501,89 @@ export default function FanLevelSection({
             {/* Nickname / Edit component */}
             <div className="space-y-0.5">
               {isEditingNickname ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={nickInput}
-                    onChange={(e) => setNickInput(e.target.value)}
-                    className="bg-zinc-800 text-white text-xs px-2 py-1 rounded border border-white/20 w-28 focus:outline-none focus:border-orange-500 font-sans"
-                    maxLength={15}
-                    placeholder="Apelido..."
-                  />
-                  <button 
-                    onClick={saveNickname} 
-                    className="p-1.5 bg-emerald-500 text-black rounded hover:bg-emerald-400 cursor-pointer"
-                  >
-                    <Check className="w-3 h-3" />
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={nickInput}
+                      onChange={(e) => setNickInput(e.target.value)}
+                      className="bg-zinc-800 text-white text-xs px-2 py-1 rounded border border-white/20 w-32 focus:outline-none focus:border-orange-500 font-sans"
+                      maxLength={15}
+                      placeholder="Apelido..."
+                    />
+                  </div>
+                  
+                  {/* Let them edit Instagram handle */}
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={instaInput}
+                      onChange={(e) => setInstaInput(e.target.value)}
+                      className="bg-zinc-850 text-white text-[10px] px-2 py-1.5 rounded border border-white/10 w-full focus:outline-none focus:border-orange-500 font-mono"
+                      placeholder="Instagram (Link ou @user)"
+                    />
+                    <label className="flex items-center gap-1.5 text-[9px] text-gray-400 select-none cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={instaPublicInput}
+                        onChange={(e) => setInstaPublicInput(e.target.checked)}
+                        className="rounded border-white/10 bg-zinc-950 text-orange-500 focus:ring-0 cursor-pointer"
+                      />
+                      <span>Instagram Público no Ranking</span>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-1.5 pt-1">
+                    <button 
+                      onClick={() => {
+                        playTapSound();
+                        const clean = nickInput.trim().replace(/\s+/g, '_');
+                        if (clean.length > 0) {
+                          const isDuplicate = dbPlayers.some(
+                            p => p.id !== activePlayerId && p.name.trim().toLowerCase() === clean.trim().toLowerCase()
+                          );
+                          if (isDuplicate) {
+                            setNotif(`❌ Apelido "${clean}" já está em uso! Escolha outro.`);
+                            setTimeout(() => setNotif(null), 3500);
+                            return;
+                          }
+                          setNickname(clean);
+                        }
+                        
+                        const cleanInsta = instaInput.trim();
+                        localStorage.setItem('pkxd_user_instagram', cleanInsta);
+                        localStorage.setItem('pkxd_user_instagram_public', String(instaPublicInput));
+                        setInstagram(cleanInsta);
+                        setInstagramPublic(instaPublicInput);
+                        
+                        setIsEditingNickname(false);
+                        setNotif(`Perfil atualizado com sucesso! 👤`);
+                        setTimeout(() => setNotif(null), 2500);
+                      }} 
+                      className="px-2.5 py-1.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded hover:bg-emerald-400 cursor-pointer flex items-center gap-1"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Salvar</span>
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingNickname(false)} 
+                      className="px-2.5 py-1.5 bg-zinc-700 text-white text-[10px] font-black uppercase rounded hover:bg-zinc-650 cursor-pointer"
+                    >
+                      <span>Voltar</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-white truncate max-w-[120px] font-mono">{nickname}</span>
                   <button 
-                    onClick={() => { playTapSound(); setIsEditingNickname(true); }}
+                    onClick={() => { 
+                      playTapSound(); 
+                      setIsEditingNickname(true); 
+                      setNickInput(nickname);
+                      setInstaInput(instagram);
+                      setInstaPublicInput(instagramPublic);
+                    }}
                     className="p-1 text-gray-400 hover:text-white transition-all cursor-pointer"
                     title="Mudar Apelido"
                   >
@@ -439,8 +670,43 @@ export default function FanLevelSection({
                 }
                 setAuthError(null);
                 if (authTab === 'register') {
+                  // Password complexity validation
+                  if (passwordForm.length < 8) {
+                    setAuthError('A senha cadastrada precisa de no mínimo 8 caracteres para ser segura!');
+                    return;
+                  }
+                  if (!/\d/.test(passwordForm)) {
+                    setAuthError('Sua senha é muito fácil! Ela deve conter pelo menos um número.');
+                    return;
+                  }
+                  if (!/[A-Za-z]/.test(passwordForm)) {
+                    setAuthError('Sua senha é muito fácil! Ela deve conter letras e números.');
+                    return;
+                  }
+                  const simplePasswords = ['123456', '12345678', 'senha123', 'admin123', 'pkxd123', 'pkxd2026', 'password'];
+                  if (simplePasswords.some(sw => passwordForm.toLowerCase().includes(sw))) {
+                    setAuthError('Esta senha é muito óbvia e vulnerável. Por favor, escolha outra combinação.');
+                    return;
+                  }
+
                   const pickNickname = nicknameForm.trim() || nickname;
-                  if (onEmailRegister) onEmailRegister(emailForm, passwordForm, pickNickname);
+                  const clean = pickNickname.trim().replace(/\s+/g, '_');
+                  const isDuplicate = dbPlayers.some(
+                    p => p.id !== activePlayerId && p.name.trim().toLowerCase() === clean.trim().toLowerCase()
+                  );
+                  if (isDuplicate) {
+                    setAuthError(`O Apelido "${clean}" já está em uso! Escolha outro nome.`);
+                    return;
+                  }
+
+                  // Save Instagram state on register
+                  const cleanInsta = instagramForm.trim();
+                  localStorage.setItem('pkxd_user_instagram', cleanInsta);
+                  localStorage.setItem('pkxd_user_instagram_public', String(instagramPublicForm));
+                  setInstagram(cleanInsta);
+                  setInstagramPublic(instagramPublicForm);
+
+                  if (onEmailRegister) onEmailRegister(emailForm, passwordForm, clean);
                 } else {
                   if (onEmailLogin) onEmailLogin(emailForm, passwordForm);
                 }
@@ -501,8 +767,8 @@ export default function FanLevelSection({
                     <input
                       type="password"
                       required
-                      minLength={6}
-                      placeholder="Sua senha (mínimo 6 dígitos)"
+                      minLength={8}
+                      placeholder="Sua senha (mínimo 8 dígitos com letras e nrs)"
                       value={passwordForm}
                       onChange={(e) => setPasswordForm(e.target.value)}
                       className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
@@ -510,17 +776,47 @@ export default function FanLevelSection({
                   </div>
 
                   {authTab === 'register' && (
-                    <div>
-                      <label className="block text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 pl-0.5 leading-none">
-                        Nickname Oficial no Site:
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Nome de Fã"
-                        value={nicknameForm}
-                        onChange={(e) => setNicknameForm(e.target.value)}
-                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-bold"
-                      />
+                    <div className="space-y-2.5 pt-1">
+                      <div>
+                        <label className="block text-[10px] text-zinc-400 uppercase tracking-widest mb-1 pl-0.5 leading-none font-sans font-bold">
+                          Nickname Oficial no Site:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Nome de Fã"
+                          value={nicknameForm}
+                          onChange={(e) => setNicknameForm(e.target.value)}
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-zinc-400 uppercase tracking-widest mb-1 pl-0.5 leading-none font-sans font-bold">
+                          Seu Instagram (Link ou @user):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="ex: @pkxd_explorer ou link"
+                          value={instagramForm}
+                          onChange={(e) => setInstagramForm(e.target.value)}
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                        />
+                      </div>
+
+                      <div className="pt-1 select-none">
+                        <label className="flex items-center gap-2 text-[10px] sm:text-xs text-zinc-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={instagramPublicForm}
+                            onChange={(e) => setInstagramPublicForm(e.target.checked)}
+                            className="rounded border-white/15 bg-zinc-900 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <span>Mostrar meu Instagram no Ranking Público</span>
+                        </label>
+                        <p className="text-[9px] text-zinc-500 leading-normal pl-5 mt-0.5">
+                          Se desativado, seu contato ficará seguro e só aparecerá para a Administração do fã-clube.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -567,68 +863,275 @@ export default function FanLevelSection({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* LEFT COLUMN: The Interactive Daily Flame Generator (Spans 5 columns) */}
-        <div className="lg:col-span-5 bg-gradient-to-b from-zinc-950 to-zinc-900 border border-white/5 p-6 rounded-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
-          {/* Animated flame symbol behind */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-            <Flame className="w-72 h-72 text-orange-500 animate-pulse fill-orange-500" />
+        {/* LEFT COLUMN: The Interactive XP Playground Tabs (Spans 5 columns) */}
+        <div className="lg:col-span-5 bg-gradient-to-b from-zinc-950 to-zinc-900 border border-white/5 p-5 rounded-2xl flex flex-col justify-between space-y-4 relative overflow-hidden min-h-[460px]">
+          {/* Tabs Switcher Row */}
+          <div className="flex border-b border-white/5 pb-2.5 gap-1.5 relative z-10 select-none">
+            <button
+              type="button"
+              onClick={() => { setActiveXpTab('daily'); if(soundEnabled) playTapSound(); }}
+              className={`flex-1 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer ${
+                activeXpTab === 'daily' 
+                  ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20 font-black' 
+                  : 'text-zinc-400 hover:text-white bg-white/5'
+              }`}
+            >
+              🔥 Fogo
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveXpTab('wheel'); if(soundEnabled) playTapSound(); }}
+              className={`flex-1 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer ${
+                activeXpTab === 'wheel' 
+                  ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 font-black' 
+                  : 'text-zinc-400 hover:text-white bg-white/5'
+              }`}
+            >
+              🎡 Roleta
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveXpTab('chest'); if(soundEnabled) playTapSound(); }}
+              className={`flex-1 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer ${
+                activeXpTab === 'chest' 
+                  ? 'bg-purple-650 text-white shadow-lg shadow-purple-650/20 font-black' 
+                  : 'text-zinc-400 hover:text-white bg-white/5'
+              }`}
+            >
+              📦 Baú
+            </button>
           </div>
 
-          <div className="space-y-4 relative z-10">
-            <span className="text-[9px] font-bold bg-orange-500/10 text-orange-400 p-1 px-2.5 rounded-full uppercase tracking-wider font-mono">
-              Fogueira Diária de Energia
-            </span>
-            <div className="space-y-2">
-              <h4 className="font-sans font-black text-lg text-white uppercase tracking-normal">
-                Faça o seu check-in e acenda a chama!
-              </h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Cada clique diário confere ao seu perfil <strong className="text-yellow-400">+50 XP</strong> de fã level e aumenta sua sequência consecutiva de <strong className="text-orange-400">🔥 Fogos</strong>! Não deixe o seu fogo apagar.
-              </p>
-            </div>
-          </div>
-
-          {/* Interactive Flame Orb container */}
-          <div className="flex flex-col items-center justify-center p-6 bg-black/30 rounded-2xl border border-white/5 space-y-3 relative z-10 select-none">
-            {/* The Fire Visual */}
-            <div className="relative">
-              {/* Pulsating background ring aura */}
-              <div className="absolute inset-[-10px] rounded-full bg-orange-600/20 blur-xl animate-pulse" />
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center bg-gradient-to-t from-red-600 via-orange-500 to-amber-300 shadow-[0_0_25px_rgba(234,88,12,0.5)] p-0.5 transition-all duration-300 ${hasClaimedDaily ? 'grayscale-[40%] scale-95 opacity-80' : 'hover:scale-105 hover:shadow-[0_0_35px_rgba(234,88,12,0.7)]'}`}>
-                <div className="w-full h-full bg-zinc-950 rounded-full flex flex-col items-center justify-center text-center">
-                  <Flame className={`w-10 h-10 text-orange-500 fill-orange-500 drop-shadow-[0_2px_8px_rgba(234,88,12,0.6)] ${hasClaimedDaily ? 'animate-pulse' : 'animate-bounce'}`} />
+          {/* Tab 1: FOGO (Classic Daily Check-in) */}
+          {activeXpTab === 'daily' && (
+            <div className="space-y-4 flex flex-col justify-between h-full relative z-10">
+              <div className="space-y-2">
+                <span className="text-[9px] font-bold bg-orange-500/10 text-orange-400 p-1 px-2.5 rounded-full uppercase tracking-wider font-mono">
+                  Fogueira Diária de Energia
+                </span>
+                <div className="space-y-1">
+                  <h4 className="font-sans font-black text-sm text-white uppercase tracking-normal">
+                    Faça o seu check-in e acenda a chama!
+                  </h4>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    Cada clique diário confere ao seu perfil <strong className="text-yellow-400">+50 XP</strong> de fã level e aumenta sua sequência consecutiva de <strong className="text-orange-400">🔥 Fogos</strong>!
+                  </p>
                 </div>
               </div>
-            </div>
 
-            <div className="text-center">
-              <div className="text-[14px] font-black text-white flex items-center justify-center gap-1">
-                <span>🔥 Sequência de Fogos:</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300 font-mono text-base font-black">{fireStreak} Dias</span>
-              </div>
-              <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">
-                {hasClaimedDaily ? "Você está brilhando no topo hoje!" : "O fogo está aguardando você hoje!"}
-              </p>
-            </div>
-          </div>
+              {/* Interactive Flame Orb container */}
+              <div className="flex flex-col items-center justify-center p-4 bg-black/30 rounded-2xl border border-white/5 space-y-2 select-none my-1">
+                {/* The Fire Visual */}
+                <div className="relative">
+                  <div className="absolute inset-[-8px] rounded-full bg-orange-600/20 blur-xl animate-pulse" />
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-t from-red-600 via-orange-500 to-amber-300 shadow-[0_0_20px_rgba(234,88,12,0.4)] p-0.5 transition-all duration-300 ${hasClaimedDaily ? 'grayscale-[40%] scale-95 opacity-80' : 'hover:scale-105'}`}>
+                    <div className="w-full h-full bg-zinc-950 rounded-full flex flex-col items-center justify-center text-center">
+                      <Flame className={`w-8 h-8 text-orange-400 fill-orange-500 drop-shadow-[0_2px_6px_rgba(234,88,12,0.5)] ${hasClaimedDaily ? 'animate-pulse' : 'animate-bounce'}`} />
+                    </div>
+                  </div>
+                </div>
 
-          <div className="relative z-10 pt-2">
-            {hasClaimedDaily ? (
-              <div className="w-full bg-emerald-500/10 border border-emerald-500/20 p-3.5 rounded-xl flex items-center gap-2 text-emerald-400 text-xs font-black uppercase text-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Colete diário garantido! (+50 XP) 🔥</span>
+                <div className="text-center">
+                  <div className="text-xs font-black text-white flex items-center justify-center gap-1">
+                    <span>🔥 Sequência de Fogos:</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300 font-mono text-xs font-black">{fireStreak} Dias</span>
+                  </div>
+                  <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest mt-0.5">
+                    {hasClaimedDaily ? "Você está brilhando no topo hoje!" : "O fogo está aguardando você hoje!"}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleClaimDaily}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 via-red-500 to-amber-500 hover:brightness-110 text-black font-sans font-black text-xs uppercase tracking-wider rounded-xl border-b-4 border-red-800 active:border-b-0 cursor-pointer shadow-[0_4px_20px_rgba(234,88,12,0.3)] active:translate-y-1 transition-all text-center flex items-center justify-center gap-2"
-              >
-                <Flame className="w-4 h-4 fill-black text-black animate-pulse" />
-                <span>Coletar XP Diário & Flamejar (+50 XP)</span>
-              </button>
-            )}
-          </div>
+
+              <div className="pt-1">
+                {hasClaimedDaily ? (
+                  <div className="w-full bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase text-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Colete diário garantido! (+50 XP) 🔥</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleClaimDaily}
+                    className="w-full py-3 bg-gradient-to-r from-orange-500 via-red-500 to-amber-500 hover:brightness-110 text-black font-sans font-black text-xs uppercase tracking-wider rounded-xl border-b-4 border-red-800 active:border-b-0 cursor-pointer shadow-[0_4px_15px_rgba(234,88,12,0.25)] active:translate-y-1 transition-all text-center flex items-center justify-center gap-2"
+                  >
+                    <Flame className="w-3.5 h-3.5 fill-black text-black animate-pulse" />
+                    <span>Coletar XP Diário (+50 XP)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: WHEEL (Lucky XP Wheel) */}
+          {activeXpTab === 'wheel' && (
+            <div className="space-y-4 flex flex-col justify-between h-full relative z-10">
+              <div className="space-y-2">
+                <span className="text-[9px] font-bold bg-pink-500/10 text-pink-400 p-1 px-2.5 rounded-full uppercase tracking-wider font-mono">
+                  Giro da Sorte Diário
+                </span>
+                <div className="space-y-1">
+                  <h4 className="font-sans font-black text-sm text-white uppercase">
+                    Roleta de XP Cósmico
+                  </h4>
+                  <p className="text-[11px] text-gray-400 leading-relaxed font-sans">
+                    Gire a roleta a cada <strong className="text-pink-400">3 horas</strong> para reivindicar de 10 a 30 XP de bônus!
+                  </p>
+                </div>
+              </div>
+
+              {/* The Spinning Plate */}
+              <div className="flex flex-col items-center justify-center py-2 select-none">
+                <div className="relative flex flex-col items-center">
+                  {/* Arrow pin */}
+                  <div className="absolute -top-3 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-pink-500 z-20 animate-pulse" />
+                  
+                  <div className="relative">
+                    <div className="absolute inset-[-6px] rounded-full bg-pink-500/15 blur-md" />
+                    <div className={`relative w-24 h-24 rounded-full border-4 border-pink-500/60 bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center shadow-2xl transition-all duration-[2400ms] ${isSpinning ? 'animate-spin' : ''}`}>
+                      <div className="absolute inset-0 rounded-full border-r-2 border-b-2 border-yellow-400/40 pointer-events-none" />
+                      <div className="absolute inset-1.5 rounded-full border-l-2 border-t-2 border-pink-500/40 pointer-events-none" />
+                      
+                      <div className="text-center z-10 p-1">
+                        {isSpinning ? (
+                          <span className="text-xl block animate-bounce">🌀</span>
+                        ) : wheelResult ? (
+                          <div className="space-y-0.5">
+                            <span className="text-[8px] uppercase font-black tracking-widest text-pink-400 block truncate max-w-[80px]">{wheelResult.message}</span>
+                            <span className="text-[11px] font-mono font-black text-yellow-300 block">+{wheelResult.amount} XP</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5">
+                            <span className="text-[11px] font-black text-white uppercase block leading-none">ROLETA</span>
+                            <span className="text-[8px] font-black text-yellow-400 block leading-none">GIRAR</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Spin Button */}
+              <div>
+                {wheelTimeLeft > 0 ? (
+                  <div className="w-full bg-black/40 border border-zinc-900 p-2.5 rounded-xl text-center">
+                    <p className="text-[9px] text-zinc-500 uppercase font-black font-mono leading-none mb-1">Próximo Giro Disponível em:</p>
+                    <span className="text-xs font-mono font-black text-pink-300">
+                      {Math.floor(wheelTimeLeft / 3600).toString().padStart(2, '0')}:
+                      {Math.floor((wheelTimeLeft % 3600) / 60).toString().padStart(2, '0')}:
+                      {(wheelTimeLeft % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isSpinning}
+                    onClick={handleSpinWheel}
+                    className="w-full py-3 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 hover:brightness-110 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl border-b-4 border-pink-800 active:border-b-0 cursor-pointer shadow-[0_4px_15px_rgba(236,72,153,0.25)] active:translate-y-1 transition-all text-center flex items-center justify-center gap-2"
+                  >
+                    <span>{isSpinning ? "Girando a Sorte..." : "Girar Roleta da Sorte"}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: CHEST (Secret Mystery Chest Clicker) */}
+          {activeXpTab === 'chest' && (
+            <div className="space-y-4 flex flex-col justify-between h-full relative z-10">
+              <div className="space-y-1.5 flex-col flex text-left">
+                <span className="text-[9px] font-bold bg-purple-500/10 text-purple-400 p-1 px-2.5 rounded-full uppercase tracking-wider font-mono w-fit">
+                  Caça ao Baú Secreto
+                </span>
+                <div className="space-y-1">
+                  <h4 className="font-sans font-black text-sm text-white uppercase">
+                    Desvende o Baú Cósmico
+                  </h4>
+                  <p className="text-[11px] text-gray-405 leading-relaxed">
+                    Clique repetidamente no baú secreto para quebrar o lacre de segurança e reivindicar um prêmio aleatório de XP de fã!
+                  </p>
+                </div>
+              </div>
+
+              {/* Chest visual panel */}
+              <div className="p-3 bg-black/45 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-h-[170px] select-none my-1">
+                {chestTimeLeft > 0 ? (
+                  <div className="text-center space-y-2 py-4">
+                    <span className="text-2xl block animate-pulse">🔒</span>
+                    <h5 className="font-bold text-[10px] text-purple-400 uppercase pb-0.5">Baú Trancado</h5>
+                    <p className="text-[9px] text-zinc-400 max-w-[200px] mx-auto leading-relaxed">
+                      O sistema está gerando um novo baú secreto. Volte em breve!
+                    </p>
+                    <div className="text-xs font-mono font-black text-purple-350 bg-purple-950/40 p-1.5 px-3 rounded-xl border border-purple-500/20 inline-block mt-1">
+                      {Math.floor(chestTimeLeft / 60).toString().padStart(2, '0')}:{(chestTimeLeft % 60).toString().padStart(2, '0')} min
+                    </div>
+                  </div>
+                ) : isChestBroken ? (
+                  <div className="text-center space-y-2.5 py-1">
+                    <span className="text-3xl block animate-bounce">🎁</span>
+                    <div className="space-y-1">
+                      <span className="text-[9px] uppercase font-black tracking-wider bg-yellow-500/10 text-yellow-500 p-0.5 px-2 rounded-full inline-block">
+                        Loot {chestReward?.rarity}!
+                      </span>
+                      <h5 className="font-black text-xs text-white uppercase tracking-tight leading-snug">{chestReward?.name}</h5>
+                      <span className="text-xs font-mono font-black text-yellow-400 block">+{chestReward?.amount} XP Adicionados!</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetChest}
+                      className="text-[9px] font-black text-white hover:underline bg-white/5 py-1 px-3 rounded-full uppercase cursor-pointer"
+                    >
+                      Achar Outro Baú
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 flex flex-col items-center w-full">
+                    {/* The Tappable Chest Visual */}
+                    <button
+                      type="button"
+                      onClick={handleTapChest}
+                      className="group relative focus:outline-none transition-transform active:scale-90"
+                    >
+                      {/* Aura pulsing behind */}
+                      <div className="absolute inset-[-12px] rounded-full bg-purple-600/10 blur-xl animate-pulse" />
+                      
+                      <div className={`text-4xl transition-all duration-75 relative select-none leading-none ${chestTaps > 0 ? "scale-110 rotate-3" : "hover:scale-105"}`}>
+                        📦
+                      </div>
+                      
+                      {/* Indicator of clicks left */}
+                      <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-black text-[9px] font-black font-mono w-5 h-5 flex items-center justify-center rounded-full shadow-lg border border-yellow-300">
+                        {chestMaxTaps - chestTaps}
+                      </div>
+                    </button>
+
+                    {/* Progress lock-breaking bar */}
+                    <div className="w-full max-w-[180px] space-y-1">
+                      <div className="flex justify-between text-[8px] font-bold text-zinc-400 uppercase">
+                        <span>Lacre do Baú</span>
+                        <span className="text-purple-400">{Math.round((chestTaps / chestMaxTaps) * 100)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 transition-all duration-150"
+                          style={{ width: `${(chestTaps / chestMaxTaps) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-[8px] text-zinc-500 uppercase tracking-wider font-black font-sans">
+                      Dê tap no baú para abrir!
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Decorative note */}
+              <div className="text-[9px] text-zinc-500 bg-white/5 rounded-xl p-2 text-center border border-white/5 font-sans leading-relaxed">
+                💡 O Baú Secreto do Admin pode conceder até <strong className="text-yellow-400">30 XP</strong> instantâneo! Ele reaparece a cada 10 minutos.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: Real-time Dynamic Leaderboard System (Spans 7 columns) */}
@@ -643,9 +1146,19 @@ export default function FanLevelSection({
                 Top Criadores & Colecionadores
               </span>
             </div>
-            <p className="text-xs text-gray-300">
+            <p className="text-xs text-gray-300 leading-normal">
               O ranking é reorganizado instantaneamente conforme você decola seus níveis de XP e soma mais dias seguidos de foguinhos 🔥 acessados!
             </p>
+
+            {/* Monthly Reset & Dynamic Prize Banner */}
+            <div className="bg-gradient-to-r from-yellow-400/15 via-amber-500/5 to-transparent border-l-4 border-yellow-400 p-2.5 rounded-r-xl text-left space-y-1 my-2 animate-pulse">
+              <h5 className="font-sans font-black text-[11px] text-yellow-300 uppercase tracking-widest flex items-center gap-1.5">
+                ⭐ DINÂMICA COMPLETA: PRÊMIO TODO MÊS!
+              </h5>
+              <p className="font-sans text-[10px] text-zinc-300 leading-relaxed">
+                Atenção, fã-clube! <strong>O ranking de fãs virtual é atualizado e reiniciado todo início de mês</strong> de forma automática. O jogador que ficar em <strong>🥇 1º Lugar (Primeiro Lugar)</strong> no final do mês garantirá um prêmio físico ou digital exclusivo do PKXD Hub! Comece a subir de nível! 🚀
+              </p>
+            </div>
           </div>
 
           {/* Leaders List */}
@@ -685,7 +1198,7 @@ export default function FanLevelSection({
 
                     {/* Player Details */}
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`text-xs font-bold truncate ${isUser ? 'text-orange-400 font-black' : 'text-zinc-200'}`}>
                           {player.name}
                         </span>
@@ -695,14 +1208,47 @@ export default function FanLevelSection({
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-semibold font-mono">
-                        Nível de Explorador: <span className="text-yellow-400 font-bold">Fã Lvl {player.level}</span>
-                      </span>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <span className="text-[10px] text-gray-400 font-semibold font-mono">
+                          Nível de Explorador: <span className="text-yellow-400 font-bold">Fã Lvl {player.level}</span>
+                        </span>
+                        {/* Instagram display block */}
+                        {player.instagram && (player.instagramPublic || isAdmin) && (
+                          <div className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-pink-400 font-semibold font-sans mt-0.5 flex-wrap">
+                            <Instagram className="w-3 h-3 text-pink-500 flex-shrink-0" />
+                            {player.instagram.startsWith('http') ? (
+                              <a 
+                                href={player.instagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline hover:text-pink-300 transition-colors truncate max-w-[150px]"
+                              >
+                                {player.instagram.substring(0, 24)}{player.instagram.length > 24 ? '...' : ''}
+                              </a>
+                            ) : (
+                              <a 
+                                href={`https://instagram.com/${player.instagram.replace('@', '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline hover:text-pink-300 transition-colors"
+                              >
+                                {player.instagram.startsWith('@') ? player.instagram : `@${player.instagram}`}
+                              </a>
+                            )}
+                            {!player.instagramPublic && isAdmin && (
+                              <span className="flex items-center gap-0.5 text-[8px] text-yellow-500 bg-yellow-500/10 px-1 py-0.2 rounded border border-yellow-500/20 uppercase font-black ml-1 flex-shrink-0" title="Instagram configurado como privado. Visível apenas para administradores!">
+                                <Lock className="w-2 h-2 text-yellow-500" />
+                                <span>Privado</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Flames/XP Score Badge */}
-                  <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
                     {/* Fire count */}
                     <div className="flex items-center gap-1 text-xs font-black font-mono text-orange-400 bg-orange-500/5 p-1 px-2 rounded-lg border border-orange-500/20">
                       <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500 animate-pulse" />
@@ -714,6 +1260,21 @@ export default function FanLevelSection({
                       <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Metas</div>
                       <div className="text-[10px] text-yellow-300 font-mono font-black">{player.xp}/100 XP</div>
                     </div>
+
+                    {/* Admin Delete/Exclude Button */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlayer(player.id, player.name);
+                        }}
+                        className="py-1 px-2 bg-red-650 hover:bg-red-600 text-white border border-red-500/20 font-mono text-[9px] font-black uppercase rounded-lg active:scale-95 transition-all cursor-pointer"
+                        title="Excluir Jogador do Ranking por Nome Impróprio"
+                      >
+                        Excluir
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -732,23 +1293,31 @@ export default function FanLevelSection({
       <div className="p-4 bg-zinc-950/40 rounded-2xl border border-white/5 space-y-2.5">
         <h5 className="text-[11px] font-black uppercase text-gray-300 tracking-wider flex items-center gap-1.5 font-sans">
           <Award className="w-4 h-4 text-orange-400 animate-pulse" />
-          Como funciona a Sequência no Portal PKXD Central?
+          Como ganhar XP e evoluir seu Nível de Explorador?
         </h5>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-300">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-300">
           <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
-            <div className="flex items-center gap-2 text-[11px] font-black text-orange-400">
-              <span>🔥 A fogueira dos fogos</span>
+            <div className="flex items-center gap-2 text-[11px] font-black text-yellow-400">
+              <span>⭐ Avaliar Novidades & Spoilers (+15 XP)</span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              Fazendo login diariamente e pressionando o botão de check-in diário, você adiciona 1 foguinho na sua pontuação de streak.
+              Avalie os spoilers com notas de 1 a 5 estrelas no modo imersivo para expandir seus pontos!
             </p>
           </div>
           <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
-            <div className="flex items-center gap-2 text-[11px] font-black text-yellow-400">
-              <span>⚡ Líder do fã-clube</span>
+            <div className="flex items-center gap-2 text-[11px] font-black text-pink-400">
+              <span>🔮 Concordar com Teorias (+10 XP)</span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              Subir de nível soma valores extremos ao seu score, permitindo que você passe nomes conhecidos da comunidade da ilha!
+              Dê opiniões ou concorde com as teorias dos fãs registradas para levantar novos bônus.
+            </p>
+          </div>
+          <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400">
+              <span>🟢 Seguir Canal do WhatsApp (+25 XP)</span>
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              Acesse nosso canal oficial para acompanhar spoilers em tempo real e reivindicar mais pontos!
             </p>
           </div>
         </div>

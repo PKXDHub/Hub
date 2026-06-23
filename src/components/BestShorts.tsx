@@ -32,7 +32,7 @@ export default function BestShorts({ shorts, isAdmin, onDelete }: BestShortsProp
       <div className="absolute top-0 left-1/3 w-32 h-32 bg-cyan-500/5 rounded-full filter blur-2xl pointer-events-none" />
       <div className="absolute -bottom-10 right-0 w-32 h-32 bg-pink-500/5 rounded-full filter blur-2xl pointer-events-none" />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/5 pb-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-2xl">
             <Smartphone className="w-5 h-5 text-cyan-400" />
@@ -42,14 +42,24 @@ export default function BestShorts({ shorts, isAdmin, onDelete }: BestShortsProp
               Melhores Shorts da Semana ⚡
             </h3>
             <p className="font-sans text-xs text-cyan-200">
-              Vídeos curtos e explosivos selecionados com exclusividade pelo <strong className="text-pink-400">PKXD Central</strong>!
+              Vídeos curtos e explosivos selecionados com exclusividade pelo <strong className="text-pink-400">PKXD Hub</strong>!
             </p>
           </div>
         </div>
 
-        <span className="font-black text-[9px] uppercase font-mono px-3 py-1 bg-cyan-950/40 text-cyan-300 rounded-full border border-cyan-500/20 self-start sm:self-center animate-pulse">
-          Premium Curado ⭐
-        </span>
+        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
+          <a
+            href="https://forms.gle/bmJqrXkSa9uibQqo9"
+            target="_blank"
+            rel="noreferrer"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5"
+          >
+            <span>📱 Enviar Shorts</span>
+          </a>
+          <span className="font-black text-[9px] uppercase font-mono px-3 py-1 bg-cyan-950/40 text-cyan-300 rounded-full border border-cyan-500/20 animate-pulse">
+            Premium Curado ⭐
+          </span>
+        </div>
       </div>
 
       {shorts.length === 0 ? (

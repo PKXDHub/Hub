@@ -1202,7 +1202,7 @@ export default function AdminPanel({
       title: featTitle,
       youtubeUrl: featUrl,
       type: featType,
-      author: 'Staff PKXD Central'
+      author: 'Staff PKXD Hub'
     });
 
     setFeatTitle('');
@@ -1222,7 +1222,7 @@ export default function AdminPanel({
     onAddTheory({
       title: theoryTitle,
       content: theoryContent,
-      author: theoryAuthor || 'Central PK XD'
+      author: theoryAuthor || 'PKXD Hub'
     });
 
     setTheoryTitle('');
@@ -2308,7 +2308,7 @@ export default function AdminPanel({
                     type="text" 
                     value={theoryAuthor} 
                     onChange={(e) => setTheoryAuthor(e.target.value)} 
-                    placeholder="Ex: PKXD Central"
+                    placeholder="Ex: PKXD Hub"
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-sm font-semibold text-white focus:outline-none focus:border-yellow-400"
                   />
                 </div>
@@ -2499,7 +2499,7 @@ export default function AdminPanel({
                   </h4>
                 </div>
                 <p className="text-xs text-gray-300 leading-relaxed font-sans">
-                  Envie uma notificação personalizada que aparecerá instantaneamente nas telas de computadores e celulares de todos os jogadores logados no PKXD Central, além de ficar salva na Central de Mensagens!
+                  Envie uma notificação personalizada que aparecerá instantaneamente nas telas de computadores e celulares de todos os jogadores logados no PKXD Hub, além de ficar salva na Central de Mensagens!
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2614,11 +2614,11 @@ export default function AdminPanel({
               {/* TUTORIAL GOOGLE ICON BRAND / FAVICON */}
               <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 mt-6 space-y-4">
                 <h5 className="font-sans font-black text-xs text-yellow-300 uppercase leading-tight tracking-tight flex items-center gap-1.5">
-                  🎨 COMO ADICIONAR SEU LOGO "CENTRAL PKXD" NO GOOGLE E SITE
+                  🎨 COMO ADICIONAR SEU LOGO "PKXD HUB" NO GOOGLE E SITE
                 </h5>
                 
                 <p className="text-[11px] text-gray-300 leading-relaxed font-sans mt-1">
-                  Para que o seu logotipo personalizado <strong>"Central PKXD"</strong> apareça no navegador como ícone do site (Favicon) e também na tela de login oficial do Google (OAuth), siga estes caminhos:
+                  Para que o seu logotipo personalizado <strong>"PKXD Hub"</strong> apareça no navegador como ícone do site (Favicon) e também na tela de login oficial do Google (OAuth), siga estes caminhos:
                 </p>
 
                 <div className="space-y-4 text-[10.5px] font-sans text-gray-350 leading-relaxed">
@@ -2638,7 +2638,7 @@ export default function AdminPanel({
                       <li>Acesse o console do Google Cloud: <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold hover:text-cyan-300 font-sans">console.cloud.google.com/apis/credentials/consent</a>.</li>
                       <li>Selecione seu projeto <strong>{(firebaseConfig as any)?.projectId || 'pkxd-e817c'}</strong> no topo.</li>
                       <li>Clique em <strong>Editar App</strong> (Edit App).</li>
-                      <li>No campo <strong>Logotipo do App</strong> (App Logo), faça upload desta mesma imagem "Central PKXD".</li>
+                      <li>No campo <strong>Logotipo do App</strong> (App Logo), faça upload desta mesma imagem "PKXD Hub".</li>
                       <li>Role até o final da página e clique em <strong>Salvar e Continuar</strong>.</li>
                     </ol>
                     <p className="text-[9.5px] text-zinc-500 mt-1">

@@ -57,6 +57,9 @@ export interface PastSpoiler {
   description: string;
   imageUrl?: string;
   createdAt: number;
+  ratingSum?: number;
+  ratingCount?: number;
+  reactions?: Record<string, number>;
 }
 
 export interface AppNotification {

@@ -8,9 +8,10 @@ interface TheoriesSectionProps {
   isAdmin: boolean;
   onLike: (id: string) => void;
   onDelete: (id: string) => void;
+  onAddXP: (amount: number, reason: string) => void;
 }
 
-export default function TheoriesSection({ theories, isAdmin, onLike, onDelete }: TheoriesSectionProps) {
+export default function TheoriesSection({ theories, isAdmin, onLike, onDelete, onAddXP }: TheoriesSectionProps) {
   // We can track which theory IDs are liked locally to prevent multi-liking on same browser session easily
   const [likedList, setLikedList] = useState<string[]>(() => {
     try {
@@ -33,6 +34,7 @@ export default function TheoriesSection({ theories, isAdmin, onLike, onDelete }:
     localStorage.setItem('pkxd_liked_theories', JSON.stringify(updated));
     onLike(id);
     playSuccessSound();
+    onAddXP(10, 'Apoio a Teoria 🔮');
   };
 
   return (
@@ -41,18 +43,28 @@ export default function TheoriesSection({ theories, isAdmin, onLike, onDelete }:
       <div className="absolute top-10 right-10 w-24 h-24 bg-pink-500/5 rounded-full filter blur-2xl pointer-events-none" />
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-cyan-500/5 rounded-full filter blur-2xl pointer-events-none" />
 
-      <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-        <div className="p-2.5 bg-pink-500/10 text-pink-400 border border-pink-500/20 rounded-2xl">
-          <Sparkles className="w-5 h-5 text-pink-400 animate-spin-slow" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-pink-500/10 text-pink-400 border border-pink-500/20 rounded-2xl">
+            <Sparkles className="w-5 h-5 text-pink-400 animate-spin-slow" />
+          </div>
+          <div>
+            <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase">
+              Teorias & Novidades do PK XD 🔮
+            </h3>
+            <p className="font-sans text-xs text-pink-200">
+              Fique por dentro das maiores novidades e teorias insanas criadas pelo fã-clube oficial!
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase">
-            Teorias & Novidades do PK XD 🔮
-          </h3>
-          <p className="font-sans text-xs text-pink-200">
-            Fique por dentro das maiores novidades e teorias insanas criadas pelo fã-clube oficial!
-          </p>
-        </div>
+        <a
+          href="https://forms.gle/xzPA9LYofmPU4JTE9"
+          target="_blank"
+          rel="noreferrer"
+          className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center inline-flex items-center justify-center gap-2 border border-white/10"
+        >
+          <span>✨ Enviar Teorias</span>
+        </a>
       </div>
 
       {theories.length === 0 ? (
@@ -74,7 +86,7 @@ export default function TheoriesSection({ theories, isAdmin, onLike, onDelete }:
                 <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-pink-400 px-2.5 py-1 bg-pink-500/10 border border-pink-500/20 rounded-md">
-                      ✍️ {theory.author || 'PKXD Central'}
+                      ✍️ {theory.author || 'PKXD Hub'}
                     </span>
                     <span className="text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
