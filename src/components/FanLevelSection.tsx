@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award, Instagram, Lock } from 'lucide-react';
 import { playTapSound, playSuccessSound, playLevelUpSound } from '../utils/audio';
-import { collection, doc, setDoc, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 
 const maskEmail = (email?: string | null): string => {
@@ -30,6 +30,8 @@ interface FanLevelSectionProps {
   onEmailRegister?: (email: string, pass: string, nickname: string) => void;
   authError?: string | null;
   isAdmin?: boolean;
+  setFanLevel?: (level: number) => void;
+  setFanXP?: (xp: number) => void;
 }
 
 interface RankedPlayer {
@@ -56,7 +58,9 @@ export default function FanLevelSection({
   onEmailLogin,
   onEmailRegister,
   authError: outerAuthError,
-  isAdmin = false
+  isAdmin = false,
+  setFanLevel,
+  setFanXP
 }: FanLevelSectionProps) {
 
   // Daily claim state
@@ -280,17 +284,102 @@ export default function FanLevelSection({
     if (soundEnabled) playTapSound();
   };
 
-  useEffect(() => {
-    localStorage.setItem('pkxd_fire_streak', fireStreak.toString());
-  }, [fireStreak]);
+  // Load returning player profile from Firestore on login to avoid losing level resets
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.uid) {
+        // If not authenticated, we reset state to empty / guest defaults
+        setNickname('Jogador_Convidado');
+        setNickInput('Jogador_Convidado');
+        setFireStreak(1);
+        setInstagram('');
+        setInstagramPublic(true);
+        return;
+      }
+
+      setIsLoadingProfile(true);
+      const cleanedId = user.uid.trim().replace(/[^a-zA-Z0-9_\-]/g, '');
+      const userDocRef = doc(db, 'leaderboard', cleanedId);
+      
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const dbName = data.name || 'Fã Secreto';
+          const dbLevel = Number(data.level) || 1;
+          const dbXp = Number(data.xp) || 0;
+          const dbFlames = Number(data.flames) || 1;
+          const dbInsta = data.instagram || '';
+          const dbInstaPublic = data.instagramPublic !== false;
+
+          // Sync into states
+          setNickname(dbName);
+          setNickInput(dbName);
+          setFireStreak(dbFlames);
+          setInstagram(dbInsta);
+          setInstagramPublic(dbInstaPublic);
+
+          // Sync into localStorage
+          localStorage.setItem('pkxd_username_nickname', dbName);
+          localStorage.setItem('pkxd_fire_streak', String(dbFlames));
+          localStorage.setItem('pkxd_user_instagram', dbInsta);
+          localStorage.setItem('pkxd_user_instagram_public', String(dbInstaPublic));
+          localStorage.setItem('pkxd_fan_level', String(dbLevel));
+          localStorage.setItem('pkxd_fan_xp', String(dbXp));
+
+          // Notify App.tsx of the correct level & xp
+          setFanLevel?.(dbLevel);
+          setFanXP?.(dbXp);
+        } else {
+          // If completely new registered user, sync guest state so they don't lose progress on signup!
+          const payload: any = {
+            id: cleanedId,
+            name: nickname === 'Jogador_Convidado' ? (user.displayName || 'Jogador_Convidado') : nickname,
+            level: Number(level) || 1,
+            xp: Number(xp) || 0,
+            flames: Number(fireStreak) || 1,
+            instagram: instagram || '',
+            instagramPublic: instagramPublic !== false,
+            updatedAt: Date.now()
+          };
+
+          if (user.uid === 'admin_fallback') {
+            payload.admin_secret = "pkxd2026_super_secret_admin_key";
+          }
+
+          await setDoc(userDocRef, payload);
+
+          const finalName = payload.name;
+          setNickname(finalName);
+          setNickInput(finalName);
+          localStorage.setItem('pkxd_username_nickname', finalName);
+        }
+      } catch (err) {
+        console.warn("Could not retrieve/set cloud user file:", err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  useEffect(() => {
+    if (isLoadingProfile) return;
+    localStorage.setItem('pkxd_fire_streak', fireStreak.toString());
+  }, [fireStreak, isLoadingProfile]);
+
+  useEffect(() => {
+    if (isLoadingProfile) return;
     localStorage.setItem('pkxd_username_nickname', nickname);
-  }, [nickname]);
+  }, [nickname, isLoadingProfile]);
 
   // Sync current player stats to database
   useEffect(() => {
     const syncToDB = async () => {
+      if (isLoadingProfile) return; // Wait until retrieve finishes
       // ONLY sync real authenticated profiles to direct database to prevent duplicates/spoofing
       if (!user?.uid) return;
 
@@ -325,7 +414,7 @@ export default function FanLevelSection({
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [user, nickname, level, xp, fireStreak, instagram, instagramPublic]);
+  }, [user, nickname, level, xp, fireStreak, instagram, instagramPublic, isLoadingProfile]);
 
   // Listen to top players from Firestore collection
   useEffect(() => {
@@ -356,20 +445,30 @@ export default function FanLevelSection({
     return () => unsubscribe();
   }, []);
 
-  // Merge database players with user's local latest stats
+  // Merge database players with user's latest stats - Only show authenticated users on Leaderboard to prevent guest duplicates
   useEffect(() => {
     let combined = [...dbPlayers];
 
-    const activePlayerId = user?.uid || clientId;
+    // ONLY append/display personal rank slot if logged in to avoid guest duplicates
+    if (!user?.uid) {
+      const computeScore = (p: RankedPlayer) => {
+        return (p.level * 10000) + (p.flames * 100) + p.xp;
+      };
+      combined.sort((a, b) => computeScore(b) - computeScore(a));
+      setLeaderboard(combined);
+      return;
+    }
+
+    const activePlayerId = user.uid;
     const hasMe = combined.some(p => p.id === activePlayerId);
     
     if (!hasMe) {
       combined.push({
         id: activePlayerId,
-        name: user ? nickname : `${nickname} (Sem Login)`,
+        name: nickname,
         level: level,
         xp: xp,
-         flames: fireStreak,
+        flames: fireStreak,
         isCurrentUser: true,
         instagram: instagram,
         instagramPublic: instagramPublic

@@ -826,6 +826,23 @@ export default function App() {
       } catch (e) {}
       setUser(null);
       setIsAdmin(false);
+
+      // Reset the local stats and localStorage key defaults to completely isolate anonymous sessions from authenticated sessions
+      setFanLevel(1);
+      setFanXP(0);
+      try {
+        localStorage.setItem('pkxd_fan_level', '1');
+        localStorage.setItem('pkxd_fan_xp', '0');
+        localStorage.setItem('pkxd_fire_streak', '1');
+        localStorage.setItem('pkxd_username_nickname', 'Jogador_Convidado');
+        localStorage.removeItem('pkxd_user_instagram');
+        localStorage.setItem('pkxd_user_instagram_public', 'true');
+        
+        // Regenerate unique clientId for a clean slate anonymous session
+        const newClientId = 'u_' + Math.random().toString(36).substring(2, 11);
+        localStorage.setItem('pkxd_user_clientId', newClientId);
+      } catch (e) {}
+
       triggerAudio('tap');
       setNotifMessage("Você deslogou com sucesso!");
       setTimeout(() => setNotifMessage(null), 4000);
@@ -2044,6 +2061,8 @@ export default function App() {
             onEmailRegister={handleEmailRegister}
             authError={googleAuthError}
             isAdmin={isAdmin}
+            setFanLevel={setFanLevel}
+            setFanXP={setFanXP}
           />
         </div>
 
