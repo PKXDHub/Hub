@@ -1010,7 +1010,7 @@ export default function FanLevelSection({
                     Faça o seu check-in e acenda a chama!
                   </h4>
                   <p className="text-[11px] text-gray-400 leading-relaxed">
-                    Cada clique diário confere ao seu perfil <strong className="text-yellow-400">+50 XP</strong> de fã level e aumenta sua sequência consecutiva de <strong className="text-orange-400">🔥 Fogos</strong>!
+                    Cada clique diário confere ao seu perfil <strong className="text-yellow-400">+500 XP</strong> de fã level e aumenta sua sequência consecutiva de <strong className="text-orange-400">🔥 Fogos</strong>!
                   </p>
                 </div>
               </div>
@@ -1070,7 +1070,7 @@ export default function FanLevelSection({
                     Roleta de XP Cósmico
                   </h4>
                   <p className="text-[11px] text-gray-400 leading-relaxed font-sans">
-                    Gire a roleta a cada <strong className="text-pink-400">3 horas</strong> para reivindicar de 10 a 30 XP de bônus!
+                    Gire a roleta a cada <strong className="text-pink-400">3 horas</strong> para reivindicar de 100 a 300 XP de bônus!
                   </p>
                 </div>
               </div>
@@ -1224,7 +1224,7 @@ export default function FanLevelSection({
 
               {/* Decorative note */}
               <div className="text-[9px] text-zinc-500 bg-white/5 rounded-xl p-2 text-center border border-white/5 font-sans leading-relaxed">
-                💡 O Baú Secreto do Admin pode conceder até <strong className="text-yellow-400">30 XP</strong> instantâneo! Ele reaparece a cada 10 minutos.
+                💡 O Baú Secreto do Admin pode conceder até <strong className="text-yellow-400">300 XP</strong> instantâneo! Ele reaparece a cada 10 minutos.
               </div>
             </div>
           )}
@@ -1394,7 +1394,7 @@ export default function FanLevelSection({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-300">
           <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 text-[11px] font-black text-yellow-400">
-              <span>⭐ Avaliar Novidades & Spoilers (+15 XP)</span>
+              <span>⭐ Avaliar Novidades & Spoilers (+150 XP)</span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
               Avalie os spoilers com notas de 1 a 5 estrelas no modo imersivo para expandir seus pontos!
@@ -1402,7 +1402,7 @@ export default function FanLevelSection({
           </div>
           <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 text-[11px] font-black text-pink-400">
-              <span>🔮 Concordar com Teorias (+10 XP)</span>
+              <span>🔮 Concordar com Teorias (+80 XP)</span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
               Dê opiniões ou concorde com as teorias dos fãs registradas para levantar novos bônus.
@@ -1410,7 +1410,7 @@ export default function FanLevelSection({
           </div>
           <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400">
-              <span>🟢 Seguir Canal do WhatsApp (+25 XP)</span>
+              <span>🟢 Seguir Canal do WhatsApp (+250 XP)</span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
               Acesse nosso canal oficial para acompanhar spoilers em tempo real e reivindicar mais pontos!
