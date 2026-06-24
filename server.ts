@@ -218,6 +218,19 @@ ${textToAnalyze}
 
 // Vite & Static file handler setup
 async function startServer() {
+  // Robust rewrite for SPA client-side routing (especially for non-ASCII routes like /Inscrições/)
+  app.use((req, res, next) => {
+    // If it's an API route or has a file extension, do not rewrite
+    if (req.path.startsWith('/api') || path.extname(req.path)) {
+      return next();
+    }
+    // For development, rewrite req.url to '/' so Vite middleware serves index.html correctly
+    if (process.env.NODE_ENV !== "production") {
+      req.url = '/';
+    }
+    next();
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
