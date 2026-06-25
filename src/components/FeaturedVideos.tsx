@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
-import { Star, Video, Play, Trash2, Trophy } from 'lucide-react';
+import { Star, Video, Play, Trash2, Trophy, MessageSquare, Code, Sparkles, HelpCircle, CheckCircle } from 'lucide-react';
 import { FeaturedVideo } from '../types';
 import { playTapSound } from '../utils/audio';
+import CommentsSection from './CommentsSection';
 
 interface FeaturedVideosProps {
   videos: FeaturedVideo[];
   isAdmin: boolean;
+  currentUser: any;
   onDelete: (id: string) => void;
+  onAddXP?: (amount: number, reason: string) => void;
 }
 
-export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVideosProps) {
+export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete, onAddXP }: FeaturedVideosProps) {
   const [activeType, setActiveType] = useState<'all' | 'game_highlight' | 'panel_video'>('all');
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+  const [showResgateGuide, setShowResgateGuide] = useState(false);
+
+  const toggleComments = (videoId: string) => {
+    playTapSound();
+    setOpenComments(prev => ({
+      ...prev,
+      [videoId]: !prev[videoId]
+    }));
+  };
 
   const filtered = videos.filter(v => activeType === 'all' || v.type === activeType);
 
@@ -29,6 +42,16 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
     window.open(url, '_blank', 'noreferrer');
   };
 
+  // Helper to detect live stream titles
+  const isLiveTitle = (title: string) => {
+    return /live|ao vivo|transmissao|stream|jogando|livecom/i.test(title);
+  };
+
+  // Helper to detect code/coupon titles
+  const isCodeTitle = (title: string) => {
+    return /codigo|code|cupom|cupons|codigos|resgatar|gift|novocodigo/i.test(title);
+  };
+
   return (
     <section id="featured-videos-section" className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6 text-left relative overflow-hidden">
       {/* Visual background accents */}
@@ -42,10 +65,10 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
           </div>
           <div>
             <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase">
-              Vídeos em Destaque 🎬
+              PAINEL DE DESTAQUES DO SITE ⚡
             </h3>
-            <p className="font-sans text-xs text-indigo-200">
-              Assista aos destaques que aparecem no jogo e os vídeos oficiais que foram para o painel!
+            <p className="font-sans text-xs text-indigo-200 leading-relaxed">
+              Vídeos e transmissões da comunidade em destaque recomendados oficialmente pelo <span className="text-pink-400 font-bold">PKXD Hub</span>!
             </p>
           </div>
         </div>
@@ -74,17 +97,59 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
               activeType === 'panel_video' ? 'bg-indigo-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'
             }`}
           >
-            Vídeos do Painel
+            Lives & Vídeos com Códigos
           </button>
         </div>
       </div>
 
-      {/* Community submissions notice */}
-      <div className="bg-indigo-950/40 border border-indigo-500/30 p-4 rounded-2xl flex items-start gap-3 relative z-10">
-        <Star className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5 animate-pulse" />
-        <div className="font-sans text-xs text-gray-300 leading-relaxed">
-          <strong className="text-indigo-300">Quer ver seu conteúdo em destaque?</strong> Estes são os vídeos de destaque selecionados a dedo pelo <strong className="text-pink-400">PKXD Central</strong>! Se você é criador de conteúdo e quer que seu vídeo ou transmissão apareça em destaque aqui, faça o envio do seu link através da nossa página de <strong className="text-indigo-300">Inscrições</strong>!
+      {/* Community submissions notice & Help Toggle */}
+      <div className="space-y-3">
+        <div className="bg-indigo-950/40 border border-indigo-500/30 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-start gap-3">
+            <Star className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5 animate-pulse" />
+            <div className="font-sans text-xs text-gray-300 leading-relaxed">
+              <strong className="text-indigo-300">Quer ver seu conteúdo em destaque?</strong> Se você é criador de conteúdo e quer que seu vídeo ou transmissão com novos códigos apareça aqui em destaque, envie seu link na aba de <strong className="text-indigo-300">Inscrições</strong>!
+            </div>
+          </div>
+          
+          <button
+            onClick={() => { playTapSound(); setShowResgateGuide(!showResgateGuide); }}
+            className="text-xs font-bold text-yellow-400 hover:text-yellow-300 transition-colors inline-flex items-center gap-1.5 bg-yellow-400/10 hover:bg-yellow-400/20 px-3 py-2 rounded-xl border border-yellow-400/20 cursor-pointer self-start md:self-auto flex-shrink-0"
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span>{showResgateGuide ? "Fechar Instruções" : "Como Resgatar Códigos?"}</span>
+          </button>
         </div>
+
+        {/* Expandable step-by-step code redeeming guide */}
+        {showResgateGuide && (
+          <div className="bg-black/40 border border-yellow-500/15 p-5 rounded-2xl space-y-4 text-left animate-in fade-in slide-in-from-top-2 duration-200">
+            <h4 className="font-sans font-black text-xs uppercase text-yellow-400 tracking-wider flex items-center gap-2">
+              <Code className="w-4 h-4" />
+              <span>GUIA DE RESGATE DE CÓDIGOS EM TRANSMISSÕES AO VIVO & VÍDEOS 🔑</span>
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans">
+              <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                <div className="w-6 h-6 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-[11px]">1</div>
+                <h5 className="font-bold text-gray-200">Acompanhe a Transmissão</h5>
+                <p className="text-[11px] text-gray-400 leading-relaxed">Assista às lives e vídeos em destaque! Os criadores oficiais ou a própria comunidade revelam códigos novos ativos na tela ou no chat em tempo real.</p>
+              </div>
+
+              <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                <div className="w-6 h-6 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center font-black text-[11px]">2</div>
+                <h5 className="font-bold text-gray-200">Copie o Código Cupom</h5>
+                <p className="text-[11px] text-gray-400 leading-relaxed">Assim que o código for compartilhado na transmissão oficial ou listado na discussão do vídeo, anote ou copie o cupom imediatamente para não expirar.</p>
+              </div>
+
+              <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-[11px]">3</div>
+                <h5 className="font-bold text-gray-200">Valide no Resgatador</h5>
+                <p className="text-[11px] text-gray-400 leading-relaxed">Suba a página e cole o código no nosso painel de <strong>Cupom / Resgatador de Códigos</strong> ativo para coletar suas gemas e moedas oficiais instantaneamente!</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -98,6 +163,9 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filtered.map((video) => {
             const embedId = getYoutubeEmbedId(video.youtubeUrl);
+            const isLive = isLiveTitle(video.title);
+            const isCode = isCodeTitle(video.title);
+
             return (
               <div
                 key={video.id}
@@ -122,41 +190,93 @@ export default function FeaturedVideos({ videos, isAdmin, onDelete }: FeaturedVi
                 </div>
 
                 <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
-                      video.type === 'game_highlight' 
-                        ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20' 
-                        : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
-                    }`}>
-                      {video.type === 'game_highlight' ? '⭐ Destaque no Jogo' : '🖥️ No Painel'}
-                    </span>
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                        video.type === 'game_highlight' 
+                          ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20' 
+                          : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+                      }`}>
+                        {video.type === 'game_highlight' ? '⭐ Destaque no Jogo' : '🖥️ No Painel'}
+                      </span>
+
+                      {/* Dynamic Live Tag */}
+                      {isLive && (
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md border bg-red-500/10 text-red-400 border-red-500/20 flex items-center gap-1 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                          <span>Ao Vivo 🔴</span>
+                        </span>
+                      )}
+
+                      {/* Dynamic Code Tag */}
+                      {isCode && (
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md border bg-yellow-400/10 text-yellow-400 border-yellow-400/20 flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5 text-yellow-400" />
+                          <span>Tem Códigos 🔑</span>
+                        </span>
+                      )}
+                    </div>
+
                     <span className="text-[10px] text-gray-500 font-mono">
                       {new Date(video.createdAt).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
 
-                  <h4 className="font-sans font-black text-sm text-gray-100 group-hover:text-indigo-300 transition-colors line-clamp-2">
-                    {video.title}
-                  </h4>
+                  <div className="space-y-1">
+                    <h4 className="font-sans font-black text-sm text-gray-100 group-hover:text-indigo-300 transition-colors line-clamp-2">
+                      {video.title}
+                    </h4>
+                    {video.author && video.author !== 'Staff PKXD Hub' && (
+                      <p className="text-[10px] text-indigo-400 font-bold uppercase">
+                        👤 Criador: @{video.author.replace('@', '')} ✨
+                      </p>
+                    )}
+                  </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                    <button
-                      onClick={() => openVideo(video.youtubeUrl)}
-                      className="text-xs font-bold text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Ver no YouTube</span>
-                    </button>
+                  <div className="pt-2 border-t border-white/5 space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => openVideo(video.youtubeUrl)}
+                          className="text-xs font-bold text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Ver no YouTube</span>
+                        </button>
 
-                    {isAdmin && (
-                      <button
-                        onClick={() => { playTapSound(); onDelete(video.id); }}
-                        className="text-xs font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-1 cursor-pointer"
-                        title="Deletar vídeo destacado"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Deletar</span>
-                      </button>
+                        <button
+                          onClick={() => toggleComments(video.id)}
+                          className={`text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-all ${
+                            openComments[video.id] 
+                              ? 'text-pink-400 font-extrabold' 
+                              : 'text-gray-400 hover:text-pink-400'
+                          }`}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Discussão ({openComments[video.id] ? 'Fechar' : 'Comentar'})</span>
+                        </button>
+                      </div>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => { playTapSound(); onDelete(video.id); }}
+                          className="text-xs font-bold text-red-400 hover:text-red-300 inline-flex items-center gap-1 cursor-pointer"
+                          title="Deletar vídeo destacado"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Deletar</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {openComments[video.id] && (
+                      <CommentsSection
+                        targetId={video.id}
+                        targetType="video"
+                        currentUser={currentUser}
+                        isAdmin={isAdmin}
+                        onAddXP={onAddXP}
+                      />
                     )}
                   </div>
                 </div>

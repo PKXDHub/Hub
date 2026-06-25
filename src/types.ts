@@ -74,3 +74,16 @@ export interface AppNotification {
   createdAt: number;
 }
 
+export interface AppComment {
+  id: string;
+  targetId: string; // theory id or video id
+  targetType: 'theory' | 'video';
+  authorName: string;
+  authorId?: string; // firebase user uid if authenticated
+  authorAvatar?: string; // photoURL if logged in
+  content: string;
+  status: 'approved' | 'pending_review' | 'blocked';
+  createdAt: number;
+}
+
+

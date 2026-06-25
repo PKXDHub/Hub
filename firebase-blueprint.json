@@ -108,6 +108,89 @@
         "updatedAt": { "type": "number" }
       },
       "required": ["id", "name", "level", "xp", "flames", "updatedAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "User feedback or discussion comment on a theory or video",
+      "type": "object",
+      "properties": {
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string", "enum": ["approved", "pending_review"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["targetId", "targetType", "authorName", "content", "status", "createdAt"]
+    },
+    "ApplicationPanel": {
+      "title": "Video application highlight",
+      "description": "Form submission to highlight a gameplay/panel video",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submittedByEmail": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "status": { "type": "string" },
+        "creator": { "type": "string" },
+        "url": { "type": "string" },
+        "description": { "type": "string" },
+        "social": { "type": "string" }
+      },
+      "required": ["id", "submittedBy", "submittedByEmail", "createdAt", "status", "creator", "url", "description"]
+    },
+    "ApplicationShorts": {
+      "title": "Shorts application highlight",
+      "description": "Form submission to highlight a YouTube short",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submittedByEmail": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "status": { "type": "string" },
+        "creator": { "type": "string" },
+        "url": { "type": "string" },
+        "title": { "type": "string" }
+      },
+      "required": ["id", "submittedBy", "submittedByEmail", "createdAt", "status", "creator", "url", "title"]
+    },
+    "ApplicationTheory": {
+      "title": "Theory application highlight",
+      "description": "Form submission to suggest/share a fan theory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submittedByEmail": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "status": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "author": { "type": "string" }
+      },
+      "required": ["id", "submittedBy", "submittedByEmail", "createdAt", "status", "title", "content", "author"]
+    },
+    "ApplicationAdmin": {
+      "title": "Administrator role application",
+      "description": "Form submission for applying for moderator/admin role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submittedByEmail": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "status": { "type": "string" },
+        "name": { "type": "string" },
+        "contact": { "type": "string" },
+        "age": { "type": "string" },
+        "reason": { "type": "string" },
+        "hours": { "type": "string" }
+      },
+      "required": ["id", "submittedBy", "submittedByEmail", "createdAt", "status", "name", "contact", "age", "reason", "hours"]
     }
   },
   "firestore": {
@@ -142,6 +225,26 @@
     "/leaderboard/{playerId}": {
       "schema": "LeaderboardPlayer",
       "description": "Collection of real-player leaderboard stats"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments and replies on theories or videos"
+    },
+    "/applications_panel/{appId}": {
+      "schema": "ApplicationPanel",
+      "description": "Submission requests for Panel Video highlighting"
+    },
+    "/applications_shorts/{appId}": {
+      "schema": "ApplicationShorts",
+      "description": "Submission requests for YouTube Shorts highlighting"
+    },
+    "/applications_theories/{appId}": {
+      "schema": "ApplicationTheory",
+      "description": "Submission requests for PK XD Theory publication"
+    },
+    "/applications_admin/{appId}": {
+      "schema": "ApplicationAdmin",
+      "description": "Form requests for new admin recruitment candidacies"
     }
   }
 }

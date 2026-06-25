@@ -2308,7 +2308,9 @@ export default function App() {
           <FeaturedVideos 
             videos={featuredList}
             isAdmin={isAdmin}
+            currentUser={user}
             onDelete={handleDeleteFeaturedVideo}
+            onAddXP={handleAddFanXP}
           />
         </div>
 
@@ -2326,6 +2328,7 @@ export default function App() {
           <TheoriesSection 
             theories={theoriesList}
             isAdmin={isAdmin}
+            currentUser={user}
             onDelete={handleDeleteTheory}
             onLike={handleLikeTheory}
             onAddXP={handleAddFanXP}

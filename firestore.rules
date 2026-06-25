@@ -113,5 +113,13 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isDeletable() || isAdmin();
     }
+
+    // Comments rules
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isDeletable() || isAdmin();
+    }
   }
 }

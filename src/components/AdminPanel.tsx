@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler } from '../types';
+import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler, AppComment } from '../types';
 import { 
   PlusCircle, Save, Sparkles, RefreshCw, X, Image, ExternalLink, Video, 
   Smartphone, BookOpen, Clock, Wand2, Loader2, Play, BellRing, AlertTriangle, Globe,
-  UserCheck, Trash2, CheckCircle
+  UserCheck, Trash2, CheckCircle, ShieldAlert, Check, MessageSquare
 } from 'lucide-react';
 import { playTapSound, playSuccessSound } from '../utils/audio';
 import { auth, db } from '../firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -57,7 +57,7 @@ interface AdminPanelProps {
   onUpdateGiftCountdown?: (title: string, date: string, enabled: boolean, content: string) => void;
 }
 
-type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'giftcountdown' | 'push' | 'logo' | 'applications';
+type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'giftcountdown' | 'push' | 'logo' | 'applications' | 'moderation';
 
 // Helper to parse standard **bold** markers into strong tags for previews
 function parseBoldPreviewText(inputText: string): React.ReactNode {
@@ -203,6 +203,10 @@ export default function AdminPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('news');
 
+  // Comments review state
+  const [allComments, setAllComments] = useState<AppComment[]>([]);
+  const [modFilter, setModFilter] = useState<'all' | 'pending' | 'approved'>('pending');
+
   // Push / Delay notification states
   const [delayActive, setDelayActive] = useState(isDelayed);
   const [delayMsgText, setDelayMsgText] = useState(delayMessage || 'Hoje o spoiler foi adiado devido a melhorias visuais. Contamos com a paciência de vocês!');
@@ -333,6 +337,23 @@ export default function AdminPanel({
   useEffect(() => {
     if (activeTab === 'applications' && isOpen) {
       fetchAllApplications();
+    }
+  }, [activeTab, isOpen]);
+
+  useEffect(() => {
+    if (activeTab === 'moderation' && isOpen) {
+      const commentsRef = collection(db, 'comments');
+      const q = query(commentsRef, orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const list: AppComment[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() } as AppComment);
+        });
+        setAllComments(list);
+      }, (error) => {
+        console.error("Error loading admin comments:", error);
+      });
+      return () => unsubscribe();
     }
   }, [activeTab, isOpen]);
 
@@ -1468,6 +1489,21 @@ export default function AdminPanel({
               {(appsPanel.length + appsShorts.length + appsTheories.length + appsAdmin.length) > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center animate-bounce">
                   {appsPanel.length + appsShorts.length + appsTheories.length + appsAdmin.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { playTapSound(); setActiveTab('moderation'); }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all uppercase cursor-pointer relative ${
+                activeTab === 'moderation' ? 'bg-yellow-400 text-black font-black' : 'bg-zinc-900 text-gray-300'
+              }`}
+            >
+              🛡️ Moderação
+              {allComments.filter(c => c.status === 'pending_review').length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-pink-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center animate-bounce">
+                  {allComments.filter(c => c.status === 'pending_review').length}
                 </span>
               )}
             </button>
@@ -3149,6 +3185,192 @@ export default function AdminPanel({
                   </div>
 
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: Moderação de Comentários */}
+          {activeTab === 'moderation' && (
+            <div className="space-y-6 text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3 gap-3">
+                <div>
+                  <h4 className="font-sans font-black text-sm uppercase text-pink-400 flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>🛡️ GERENCIAR COMENTÁRIOS E SEGURANÇA</span>
+                  </h4>
+                  <p className="text-[11px] text-gray-400 font-sans leading-relaxed">
+                    Aprove ou exclua comentários enviados nas seções de Teorias e Vídeos. Comentários contendo links, hacks ou insultos são bloqueados automaticamente para moderação.
+                  </p>
+                </div>
+
+                <div className="flex bg-black/30 p-1 rounded-xl border border-white/5 self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => { playTapSound(); setModFilter('pending'); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+                      modFilter === 'pending' ? 'bg-pink-500 text-white shadow' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Pendentes ({allComments.filter(c => c.status === 'pending_review').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { playTapSound(); setModFilter('approved'); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+                      modFilter === 'approved' ? 'bg-indigo-500 text-white shadow' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Aprovados ({allComments.filter(c => c.status === 'approved').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { playTapSound(); setModFilter('all'); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase cursor-pointer ${
+                      modFilter === 'all' ? 'bg-zinc-800 text-white shadow' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Todos ({allComments.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Comments List */}
+              {allComments.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-white/5 bg-black/10 rounded-2xl">
+                  <MessageSquare className="w-8 h-8 text-pink-500/30 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Nenhum comentário registrado no momento.</p>
+                </div>
+              ) : (
+                (() => {
+                  const filtered = allComments.filter(c => {
+                    if (modFilter === 'pending') return c.status === 'pending_review';
+                    if (modFilter === 'approved') return c.status === 'approved';
+                    return true;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500 text-xs italic">
+                        Nenhum comentário correspondente ao filtro selecionado.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 gap-4">
+                      {filtered.map((comment) => {
+                        const isPending = comment.status === 'pending_review';
+                        
+                        // Highlight suspicious terms
+                        const suspiciousWords = ['hack', 'mod menu', 'cheat', 'cheater', 'gerador', 'gratis', 'gemas', 'moedas', 'robux', 'bug', 'merda', 'porra', 'bosta', 'caralho', 'puta', 'fdp', 'viado', 'cu', 'cuzão', 'link_suspeito'];
+                        const textLower = comment.content.toLowerCase();
+                        const hasSuspiciousTerms = suspiciousWords.some(word => textLower.includes(word));
+
+                        return (
+                          <div 
+                            key={comment.id} 
+                            className={`p-4 bg-black/40 border rounded-xl space-y-3 transition-all ${
+                              isPending 
+                                ? 'border-yellow-500/20 bg-yellow-500/5' 
+                                : 'border-zinc-850 hover:border-zinc-800'
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-pink-400">
+                                  ✍️ {comment.authorName}
+                                </span>
+                                {comment.authorId && (
+                                  <span className="text-[9px] font-mono bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 font-bold uppercase">
+                                    Inscrito ✨
+                                  </span>
+                                )}
+                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase font-bold ${
+                                  comment.targetType === 'theory' 
+                                    ? 'bg-pink-500/10 text-pink-300 border-pink-500/20' 
+                                    : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+                                }`}>
+                                  {comment.targetType === 'theory' ? '🔮 Teoria' : '🎬 Vídeo'}
+                                </span>
+                                <span className="text-[10px] text-gray-500">
+                                  {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {isPending ? (
+                                  <span className="text-[9px] font-mono bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/30 font-bold uppercase flex items-center gap-1 animate-pulse">
+                                    <ShieldAlert className="w-3 h-3" />
+                                    Filtro Ativado ⚠️
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-bold uppercase flex items-center gap-1">
+                                    <Check className="w-3 h-3" />
+                                    Aprovado ✔
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="bg-black/30 p-3 rounded-lg border border-white/5 space-y-1.5">
+                              <p className="text-xs text-gray-200 leading-relaxed font-sans break-words font-medium">
+                                {comment.content}
+                              </p>
+                              {hasSuspiciousTerms && isPending && (
+                                <div className="text-[10px] text-yellow-400 font-bold uppercase flex items-center gap-1 pt-1.5 border-t border-white/5">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-yellow-500 animate-bounce" />
+                                  <span>Contém termos suspeitos ou proibidos detectados pelo filtro automático!</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 justify-end pt-1.5 border-t border-white/5">
+                              {isPending && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      playTapSound();
+                                      const commentRef = doc(db, 'comments', comment.id);
+                                      await updateDoc(commentRef, { status: 'approved' });
+                                      showStatus('Comentário aprovado com sucesso! ✨');
+                                      playSuccessSound();
+                                    } catch (err: any) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-black border border-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Aprovar Publicação</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    playTapSound();
+                                    if (confirm('Deseja excluir permanentemente este comentário?')) {
+                                      await deleteDoc(doc(db, 'comments', comment.id));
+                                      showStatus('Comentário excluído da base de dados! 🗑️');
+                                    }
+                                  } catch (err: any) {
+                                    alert(err.message);
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-black border border-red-500/20 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
               )}
             </div>
           )}

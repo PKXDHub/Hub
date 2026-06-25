@@ -2,16 +2,21 @@ import React, { useState } from 'react';
 import { Sparkles, MessageSquare, ThumbsUp, Trash2, Calendar } from 'lucide-react';
 import { Theory } from '../types';
 import { playTapSound, playSuccessSound } from '../utils/audio';
+import CommentsSection from './CommentsSection';
 
 interface TheoriesSectionProps {
   theories: Theory[];
   isAdmin: boolean;
+  currentUser: any;
   onLike: (id: string) => void;
   onDelete: (id: string) => void;
   onAddXP: (amount: number, reason: string) => void;
 }
 
-export default function TheoriesSection({ theories, isAdmin, onLike, onDelete, onAddXP }: TheoriesSectionProps) {
+export default function TheoriesSection({ theories, isAdmin, currentUser, onLike, onDelete, onAddXP }: TheoriesSectionProps) {
+  // Toggle state for which theory comments are expanded
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+
   // We can track which theory IDs are liked locally to prevent multi-liking on same browser session easily
   const [likedList, setLikedList] = useState<string[]>(() => {
     try {
@@ -36,6 +41,15 @@ export default function TheoriesSection({ theories, isAdmin, onLike, onDelete, o
     playSuccessSound();
     onAddXP(80, 'Apoio a Teoria 🔮');
   };
+
+  const toggleComments = (theoryId: string) => {
+    playTapSound();
+    setOpenComments(prev => ({
+      ...prev,
+      [theoryId]: !prev[theoryId]
+    }));
+  };
+
 
   return (
     <section id="theories-section" className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6 text-left relative overflow-hidden">
@@ -114,19 +128,43 @@ export default function TheoriesSection({ theories, isAdmin, onLike, onDelete, o
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/5 flex gap-4">
-                  <button
-                    onClick={() => handleLikeClick(theory.id)}
-                    disabled={isLiked}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      isLiked 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default'
-                        : 'bg-zinc-900 border-zinc-800 hover:border-pink-500/30 text-gray-300 hover:text-pink-400 cursor-pointer'
-                    }`}
-                  >
-                    <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-emerald-400' : ''}`} />
-                    <span>Concordar • {theory.likes || 0} Votos</span>
-                  </button>
+                <div className="pt-3 border-t border-white/5 flex flex-col gap-4">
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      onClick={() => handleLikeClick(theory.id)}
+                      disabled={isLiked}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                        isLiked 
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default'
+                          : 'bg-zinc-900 border-zinc-800 hover:border-pink-500/30 text-gray-300 hover:text-pink-400 cursor-pointer'
+                      }`}
+                    >
+                      <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-emerald-400' : ''}`} />
+                      <span>Concordar • {theory.likes || 0} Votos</span>
+                    </button>
+
+                    <button
+                      onClick={() => toggleComments(theory.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        openComments[theory.id]
+                          ? 'bg-pink-500/10 border-pink-500/30 text-pink-400 font-extrabold'
+                          : 'bg-zinc-900 border-zinc-800 hover:border-pink-500/30 text-gray-300 hover:text-pink-400'
+                      }`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Discussão ({openComments[theory.id] ? 'Aberto' : 'Ver'})</span>
+                    </button>
+                  </div>
+
+                  {openComments[theory.id] && (
+                    <CommentsSection
+                      targetId={theory.id}
+                      targetType="theory"
+                      currentUser={currentUser}
+                      isAdmin={isAdmin}
+                      onAddXP={onAddXP}
+                    />
+                  )}
                 </div>
               </div>
             );

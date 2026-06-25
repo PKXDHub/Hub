@@ -68,17 +68,33 @@ export default function ApplicationsSection({
   const fetchAllApplications = async () => {
     setIsAppsLoading(true);
     try {
-      const panelSnap = await getDocs(collection(db, 'applications_panel'));
-      setAppsPanel(panelSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const panelSnap = await getDocs(collection(db, 'applications_panel'));
+        setAppsPanel(panelSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'applications_panel');
+      }
 
-      const shortsSnap = await getDocs(collection(db, 'applications_shorts'));
-      setAppsShorts(shortsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const shortsSnap = await getDocs(collection(db, 'applications_shorts'));
+        setAppsShorts(shortsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'applications_shorts');
+      }
 
-      const theoriesSnap = await getDocs(collection(db, 'applications_theories'));
-      setAppsTheories(theoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const theoriesSnap = await getDocs(collection(db, 'applications_theories'));
+        setAppsTheories(theoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'applications_theories');
+      }
 
-      const adminSnap = await getDocs(collection(db, 'applications_admin'));
-      setAppsAdmin(adminSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const adminSnap = await getDocs(collection(db, 'applications_admin'));
+        setAppsAdmin(adminSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'applications_admin');
+      }
     } catch (err) {
       console.error("Erro ao buscar inscrições:", err);
     } finally {
@@ -234,7 +250,11 @@ export default function ApplicationsSection({
         };
       }
 
-      await setDoc(doc(db, collectionName, id), payload);
+      try {
+        await setDoc(doc(db, collectionName, id), payload);
+      } catch (dbErr) {
+        handleFirestoreError(dbErr, OperationType.WRITE, collectionName);
+      }
       
       triggerAudio('levelUp');
       setSubmitStatus({
