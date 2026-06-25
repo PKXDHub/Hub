@@ -288,6 +288,18 @@ export default function App() {
   const isApplicationsRoute = currentPath.toLowerCase().includes('inscric') || 
                                currentPath.toLowerCase().includes('inscriç') || 
                                currentPath.toLowerCase().includes('inscricao');
+
+  useEffect(() => {
+    try {
+      if (isApplicationsRoute) {
+        document.title = "PKXD Hub - Inscrições";
+      } else {
+        document.title = "Central PK XD - Spoilers e Novidades";
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [isApplicationsRoute]);
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
@@ -1628,34 +1640,20 @@ export default function App() {
         </span>
       </div>
 
-      {/* Floating interactive alerts display (Completely redesigned for scroll-responsive UI/UX as requested!) */}
+      {/* Floating interactive alerts display (Positioned cleanly at bottom without scroll-dependent jumping bugs!) */}
       {notifMessage && (
         <div 
           id="floating-celebration" 
-          className={`fixed left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-zinc-950/95 border-2 backdrop-blur-md text-white p-4 rounded-2xl transition-all duration-300 text-left flex items-start gap-3 relative overflow-hidden ${
-            scrollY > 400 
-              ? 'bottom-24 border-pink-500/85 shadow-[0_-12px_35px_rgba(236,72,153,0.35)] animate-slide-up' 
-              : 'top-24 border-cyan-400/85 shadow-[0_12px_35px_rgba(34,211,238,0.25)] animate-scale-up'
-          }`}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-50 w-[92%] max-w-md bg-zinc-950/95 border-2 border-pink-500/85 shadow-[0_8px_30px_rgba(236,72,153,0.3)] backdrop-blur-md text-white p-4 rounded-2xl transition-all duration-300 text-left flex items-start gap-3 overflow-hidden animate-slide-up animate-fade-in"
         >
           {/* Neon side indicator */}
-          <div className={`absolute top-0 bottom-0 left-0 w-1.5 rounded-l-md bg-gradient-to-b ${
-            scrollY > 400 
-              ? 'from-pink-500 via-rose-500 to-yellow-300' 
-              : 'from-cyan-400 via-pink-500 to-yellow-300'
-          }`} />
+          <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-gradient-to-b from-pink-500 via-rose-500 to-yellow-300" />
           
-          <div className={`p-1.5 border rounded-xl flex-shrink-0 animate-pulse ${
-            scrollY > 400 
-              ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' 
-              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-          }`}>
+          <div className="p-1.5 border rounded-xl flex-shrink-0 animate-pulse bg-pink-500/10 text-pink-400 border-pink-500/20">
             <BellRing className="w-5 h-5 animate-swing" />
           </div>
           <div className="flex-1 space-y-0.5 text-left pl-1">
-            <h5 className={`text-[10px] sm:text-[11px] font-mono tracking-widest font-extrabold uppercase flex items-center justify-between ${
-              scrollY > 400 ? 'text-pink-400' : 'text-cyan-300'
-            }`}>
+            <h5 className="text-[10px] sm:text-[11px] font-mono tracking-widest font-extrabold uppercase flex items-center justify-between text-pink-400">
               <span>ALERTA CENTRAL PK XD</span>
               <span className="text-[9px] text-gray-500 font-normal">AGORA</span>
             </h5>
