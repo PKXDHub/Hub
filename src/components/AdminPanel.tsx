@@ -48,9 +48,16 @@ interface AdminPanelProps {
   onDirectArchivePastSpoiler?: (title: string, desc: string, imageUrl?: string) => void;
   onArchiveAndClearActiveSpoiler?: (title: string, desc: string, imageUrl: string) => void;
   onDeleteActiveSpoiler?: () => void;
+
+  // Gift countdown props
+  activeGiftCountdownTitle?: string;
+  activeGiftCountdownDate?: string;
+  activeGiftCountdownEnabled?: boolean;
+  activeGiftCountdownContent?: string;
+  onUpdateGiftCountdown?: (title: string, date: string, enabled: boolean, content: string) => void;
 }
 
-type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'push' | 'logo' | 'applications';
+type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'giftcountdown' | 'push' | 'logo' | 'applications';
 
 // Helper to parse standard **bold** markers into strong tags for previews
 function parseBoldPreviewText(inputText: string): React.ReactNode {
@@ -185,7 +192,13 @@ export default function AdminPanel({
   onSendCustomNotification,
   onDirectArchivePastSpoiler,
   onArchiveAndClearActiveSpoiler,
-  onDeleteActiveSpoiler
+  onDeleteActiveSpoiler,
+
+  activeGiftCountdownTitle,
+  activeGiftCountdownDate,
+  activeGiftCountdownEnabled,
+  activeGiftCountdownContent,
+  onUpdateGiftCountdown
 }: AdminPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('news');
@@ -233,6 +246,12 @@ export default function AdminPanel({
   const [extraTitle, setExtraTitle] = useState(activeExtraCountdownTitle || 'Spoiler Extra de Sexta! 🔥');
   const [extraDate, setExtraDate] = useState(activeExtraCountdownDate || '');
   const [extraEnabled, setExtraEnabled] = useState(activeExtraCountdownEnabled || false);
+
+  // Gift Countdown States
+  const [giftTitle, setGiftTitle] = useState(activeGiftCountdownTitle || '🎁 PRESENTE SURPRESA!');
+  const [giftDate, setGiftDate] = useState(activeGiftCountdownDate || '');
+  const [giftEnabled, setGiftEnabled] = useState(activeGiftCountdownEnabled || false);
+  const [giftContent, setGiftContent] = useState(activeGiftCountdownContent || '');
 
   // Logo state
   const [tempLogoUrl, setTempLogoUrl] = useState(siteLogoUrl);
@@ -1121,6 +1140,23 @@ export default function AdminPanel({
     setExtraEnabled(activeExtraCountdownEnabled);
   }, [activeExtraCountdownTitle, activeExtraCountdownDate, activeExtraCountdownEnabled]);
 
+  // Sync gift countdown sets
+  useEffect(() => {
+    if (activeGiftCountdownTitle !== undefined) setGiftTitle(activeGiftCountdownTitle);
+    if (activeGiftCountdownDate !== undefined) setGiftDate(activeGiftCountdownDate);
+    if (activeGiftCountdownEnabled !== undefined) setGiftEnabled(activeGiftCountdownEnabled);
+    if (activeGiftCountdownContent !== undefined) setGiftContent(activeGiftCountdownContent);
+  }, [activeGiftCountdownTitle, activeGiftCountdownDate, activeGiftCountdownEnabled, activeGiftCountdownContent]);
+
+  const handleGiftCountdownSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onUpdateGiftCountdown) {
+      onUpdateGiftCountdown(giftTitle, giftDate, giftEnabled, giftContent);
+      showStatus('Contagem regressiva de Presente/Código salva com sucesso! 🎁');
+      playSuccessSound();
+    }
+  };
+
   const showStatus = (msg: string) => {
     setStatusMsg(msg);
     setTimeout(() => setStatusMsg(''), 4000);
@@ -1393,6 +1429,15 @@ export default function AdminPanel({
               }`}
             >
               ⏰ Contagem Alternativa
+            </button>
+            <button
+              type="button"
+              onClick={() => { playTapSound(); setActiveTab('giftcountdown'); }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all uppercase cursor-pointer ${
+                activeTab === 'giftcountdown' ? 'bg-yellow-400 text-black font-black' : 'bg-zinc-900 text-gray-300'
+              }`}
+            >
+              🎁 Soltar Presente/Código
             </button>
             <button
               type="button"
@@ -2483,6 +2528,76 @@ export default function AdminPanel({
                 className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-black font-sans font-black uppercase text-xs rounded-xl border-b-4 border-yellow-700 active:border-b-0 cursor-pointer border-0"
               >
                 ⏰ Salvar Configurações de Timer Extra
+              </button>
+            </form>
+          )}
+
+          {/* TAB: Contagem Regressiva de Presente/Código */}
+          {activeTab === 'giftcountdown' && (
+            <form onSubmit={handleGiftCountdownSubmit} className="space-y-4 text-left">
+              <h4 className="font-sans font-black text-sm text-yellow-400 uppercase tracking-wide flex items-center gap-1.5">
+                🎁 Configurar Liberação de Presente ou Código
+              </h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Configure uma contagem regressiva especial para o topo do site. Quando o timer acabar, o código, cupom ou presente secreto será liberado automaticamente em tempo real com efeitos de comemoração neon!
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Título do Presente *</label>
+                  <input 
+                    type="text" 
+                    value={giftTitle} 
+                    onChange={(e) => setGiftTitle(e.target.value)} 
+                    placeholder="Ex: 🎁 PRESENTE SECRETO DE GEMAS!"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-sm font-semibold text-white focus:outline-none focus:border-yellow-400"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Liberar em (Data e Hora Alvo) *</label>
+                  <input 
+                    type="datetime-local" 
+                    value={giftDate} 
+                    onChange={(e) => setGiftDate(e.target.value)} 
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-sm font-semibold text-white focus:outline-none focus:border-yellow-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Conteúdo do Presente / Código Secreto (Revelado ao fim) *</label>
+                <textarea 
+                  value={giftContent} 
+                  onChange={(e) => setGiftContent(e.target.value)} 
+                  placeholder="Ex: CÓDIGO ATIVO: PKXDHUB2026 (ou coloque links de formulários, presentes, etc.)"
+                  rows={3}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-sm font-semibold text-white focus:outline-none focus:border-yellow-400 custom-scrollbar font-mono"
+                  required
+                />
+              </div>
+
+              {/* Enabled toggle */}
+              <div className="flex items-center gap-3 bg-zinc-900/60 p-4 rounded-xl border border-white/5">
+                <input 
+                  type="checkbox" 
+                  id="giftEnabledBtn"
+                  checked={giftEnabled} 
+                  onChange={(e) => setGiftEnabled(e.target.checked)}
+                  className="w-4.5 h-4.5 rounded cursor-pointer accent-yellow-400"
+                />
+                <label htmlFor="giftEnabledBtn" className="font-sans text-xs font-black uppercase text-gray-200 cursor-pointer select-none">
+                  Habilitar e exibir este cronômetro de Presente no topo do site
+                </label>
+              </div>
+
+              <button 
+                type="submit" 
+                className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-black font-sans font-black uppercase text-xs rounded-xl border-b-4 border-yellow-700 active:border-b-0 cursor-pointer border-0"
+              >
+                🎁 Salvar Configurações de Presente
               </button>
             </form>
           )}

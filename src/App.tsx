@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { INITIAL_NEWS } from './components/initialNews';
 import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler, AppNotification } from './types';
 import CountdownWidget from './components/CountdownWidget';
+import GiftCountdown from './components/GiftCountdown';
 import WhatsAppPromo from './components/WhatsAppPromo';
 import AdminPanel from './components/AdminPanel';
 import PromoCodeRedeemer from './components/PromoCodeRedeemer';
@@ -133,6 +134,12 @@ export default function App() {
   const [extraCountdownTitle, setExtraCountdownTitle] = useState('Spoiler Surpresa! 🔥');
   const [extraCountdownDate, setExtraCountdownDate] = useState('');
   const [extraCountdownEnabled, setExtraCountdownEnabled] = useState(false);
+
+  // State for gift countdown release timer
+  const [giftCountdownTitle, setGiftCountdownTitle] = useState('🎁 PRESENTE SURPRESA!');
+  const [giftCountdownDate, setGiftCountdownDate] = useState('');
+  const [giftCountdownEnabled, setGiftCountdownEnabled] = useState(false);
+  const [giftCountdownContent, setGiftCountdownContent] = useState('');
 
   // Authentication & Admin levels
   const [user, setUser] = useState<User | null>(() => {
@@ -518,6 +525,22 @@ export default function App() {
         if (data.delayMessage !== undefined && data.delayMessage !== null) {
           setDelayMessage(data.delayMessage);
         }
+
+        if (data.giftCountdownTitle !== undefined && data.giftCountdownTitle !== null) {
+          setGiftCountdownTitle(data.giftCountdownTitle);
+        }
+
+        if (data.giftCountdownDate !== undefined && data.giftCountdownDate !== null) {
+          setGiftCountdownDate(data.giftCountdownDate);
+        }
+
+        if (data.giftCountdownEnabled !== undefined && data.giftCountdownEnabled !== null) {
+          setGiftCountdownEnabled(data.giftCountdownEnabled);
+        }
+
+        if (data.giftCountdownContent !== undefined && data.giftCountdownContent !== null) {
+          setGiftCountdownContent(data.giftCountdownContent);
+        }
       } else {
         // Document does not exist or has been deleted - fallback to defaults immediately
         setSpoilerTitle(defaultTitle);
@@ -537,6 +560,10 @@ export default function App() {
         setExtraCountdownEnabled(false);
         setIsDelayed(false);
         setDelayMessage('');
+        setGiftCountdownTitle('🎁 PRESENTE SURPRESA!');
+        setGiftCountdownDate('');
+        setGiftCountdownEnabled(false);
+        setGiftCountdownContent('');
       }
     }, (error) => {
       console.warn("Could not fetch real-time settings:", error);
@@ -1422,6 +1449,41 @@ export default function App() {
     }
   };
 
+  // Gift countdown handler
+  const handleUpdateGiftCountdown = async (title: string, date: string, enabled: boolean, content: string) => {
+    if (!checkAdminWritePermission()) return;
+    try {
+      const docRef = doc(db, 'settings', 'app');
+      await setDoc(docRef, {
+        giftCountdownTitle: title,
+        giftCountdownDate: date,
+        giftCountdownEnabled: enabled,
+        giftCountdownContent: content,
+        admin_secret: "pkxd2026_super_secret_admin_key"
+      }, { merge: true });
+      triggerAudio('success');
+      setNotifMessage("✅ Contagem regressiva de Presente/Código salva com sucesso! 🎁");
+      setTimeout(() => setNotifMessage(null), 3500);
+
+      // Trigger automatic global push notification to let everyone know about the release!
+      const notifId = Date.now().toString();
+      const notifRef = doc(db, 'notifications', notifId);
+      await setDoc(notifRef, {
+        id: notifId,
+        title: title || '🎁 PRESENTE REVELADO!',
+        body: enabled 
+          ? `Uma nova contagem regressiva para presentear a comunidade foi iniciada! Liberação em: ${new Date(date).toLocaleString('pt-BR')}`
+          : `O cronômetro de presentes foi alterado pelo administrador.`,
+        type: 'countdown_alert',
+        createdAt: Date.now()
+      });
+    } catch (err: any) {
+      console.error("Error updating gift countdown:", err);
+      setNotifMessage(`❌ Erro ao atualizar presente: ${err?.message || String(err)}`);
+      setTimeout(() => setNotifMessage(null), 8000);
+    }
+  };
+
   // Clear / restore default backup list
   const handleResetToDefaults = async () => {
     if (!checkAdminWritePermission()) return;
@@ -1849,6 +1911,12 @@ export default function App() {
                   onDirectArchivePastSpoiler={handleDirectArchivePastSpoiler}
                   onArchiveAndClearActiveSpoiler={handleArchiveAndClearActiveSpoiler}
                   onDeleteActiveSpoiler={handleDeleteActiveSpoiler}
+                  // Gift countdown support
+                  activeGiftCountdownTitle={giftCountdownTitle}
+                  activeGiftCountdownDate={giftCountdownDate}
+                  activeGiftCountdownEnabled={giftCountdownEnabled}
+                  activeGiftCountdownContent={giftCountdownContent}
+                  onUpdateGiftCountdown={handleUpdateGiftCountdown}
                 />
               </div>
             ) : (

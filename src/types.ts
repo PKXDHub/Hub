@@ -49,6 +49,10 @@ export interface AppSettings {
   extraCountdownEnabled?: boolean;
   isDelayed?: boolean;
   delayMessage?: string;
+  giftCountdownTitle?: string;
+  giftCountdownDate?: string;
+  giftCountdownEnabled?: boolean;
+  giftCountdownContent?: string;
 }
 
 export interface PastSpoiler {
