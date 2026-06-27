@@ -65,10 +65,10 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
           </div>
           <div>
             <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase">
-              PAINEL DE DESTAQUES DO SITE ⚡
+              PAINEL DE DESTAQUES DA COMUNIDADE 🌟
             </h3>
             <p className="font-sans text-xs text-indigo-200 leading-relaxed">
-              Vídeos e transmissões da comunidade em destaque recomendados oficialmente pelo <span className="text-pink-400 font-bold">PKXD Hub</span>!
+              Os melhores vídeos, gameplays e criações da nossa comunidade recomendados pelo <span className="text-pink-400 font-bold">PKXD Hub</span>!
             </p>
           </div>
         </div>
