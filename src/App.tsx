@@ -2599,8 +2599,17 @@ export default function App() {
 
       {/* CENTRAL DE NOTIFICAÇÕES OVERLAY */}
       {isNotifOverlayOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm animate-fade-in" id="notifications-list-overlay">
-          <div className="bg-neutral-900 border-2 border-cyan-400 rounded-3xl p-5 sm:p-8 w-full max-w-2xl relative shadow-[0_0_30px_rgba(34,211,238,0.2)] my-4 sm:my-8 text-left">
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm animate-fade-in cursor-pointer" 
+          id="notifications-list-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsNotifOverlayOpen(false);
+              triggerAudio('tap');
+            }
+          }}
+        >
+          <div className="bg-neutral-900 border-2 border-cyan-400 rounded-3xl p-5 sm:p-8 w-full max-w-2xl relative shadow-[0_0_30px_rgba(34,211,238,0.2)] my-4 sm:my-8 text-left cursor-default">
             
             {/* Top Close Controls */}
             <button
