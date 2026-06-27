@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Star, Play, Trash2, Trophy, MessageSquare } from 'lucide-react';
+import { Star, Play, Trash2, Trophy } from 'lucide-react';
 import { FeaturedVideo } from '../types';
 import { playTapSound } from '../utils/audio';
-import CommentsSection from './CommentsSection';
 
 interface FeaturedVideosProps {
   videos: FeaturedVideo[];
@@ -13,19 +12,11 @@ interface FeaturedVideosProps {
 }
 
 export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete, onAddXP }: FeaturedVideosProps) {
-  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'painel' | 'comunidade'>('painel');
 
   const mostRecentVideoId = videos.length > 0
     ? [...videos].sort((a, b) => b.createdAt - a.createdAt)[0].id
     : null;
-
-  const toggleComments = (videoId: string) => {
-    playTapSound();
-    setOpenComments(prev => ({
-      ...prev,
-      [videoId]: !prev[videoId]
-    }));
-  };
 
   const getYoutubeEmbedId = (url: string) => {
     try {
@@ -41,6 +32,12 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
     playTapSound();
     window.open(url, '_blank', 'noreferrer');
   };
+
+  // Filter videos based on the active tab
+  const filteredVideos = videos.filter(video => {
+    const type = video.type || 'game_highlight';
+    return activeTab === 'painel' ? type === 'game_highlight' : type === 'panel_video';
+  });
 
   return (
     <section 
@@ -81,32 +78,70 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
         </div>
       </div>
 
-      {videos.length === 0 ? (
+      {/* PAINEL / COMUNIDADE AREA SELECTOR */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/5 pb-4">
+        <button
+          onClick={() => { playTapSound(); setActiveTab('painel'); }}
+          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'painel'
+              ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:bg-amber-400 scale-[1.02]'
+              : 'bg-zinc-800/30 hover:bg-zinc-800/50 text-gray-400 border border-white/5'
+          }`}
+        >
+          <Star className={`w-3.5 h-3.5 ${activeTab === 'painel' ? 'fill-current' : ''}`} />
+          <span>🌟 PAINEL (Super Destaques)</span>
+        </button>
+
+        <button
+          onClick={() => { playTapSound(); setActiveTab('comunidade'); }}
+          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'comunidade'
+              ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:bg-indigo-500 scale-[1.02]'
+              : 'bg-zinc-800/30 hover:bg-zinc-800/50 text-gray-400 border border-white/5'
+          }`}
+        >
+          <Trophy className="w-3.5 h-3.5" />
+          <span>👥 COMUNIDADE (Enviados)</span>
+        </button>
+      </div>
+
+      {filteredVideos.length === 0 ? (
         <div className="bg-black/20 border border-dashed border-white/5 p-8 rounded-2xl text-center">
           <Star className="w-8 h-8 text-indigo-400/40 mx-auto mb-2 animate-pulse" />
           <p className="text-xs font-black text-gray-400 uppercase tracking-wider">
-            Nenhum vídeo em destaque cadastrado pela comunidade ainda.
+            {activeTab === 'painel' 
+              ? 'Nenhum vídeo em destaque no Painel de Vídeos no momento.'
+              : 'Nenhum vídeo aprovado na aba da Comunidade ainda.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {videos.map((video) => {
+          {filteredVideos.map((video) => {
             const embedId = getYoutubeEmbedId(video.youtubeUrl);
             const isMostRecent = video.id === mostRecentVideoId;
+            const isPainel = video.type === 'game_highlight';
 
             return (
               <div
                 key={video.id}
-                className={`bg-black/35 border rounded-2xl overflow-hidden flex flex-col justify-between group transition-all relative ${
-                  isMostRecent 
-                    ? 'border-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/20' 
+                className={`bg-black/35 border rounded-3xl overflow-hidden flex flex-col justify-between group transition-all relative ${
+                  isPainel
+                    ? 'border-yellow-400 bg-gradient-to-b from-zinc-950 via-zinc-900 to-amber-950/25 shadow-[0_0_25px_rgba(245,158,11,0.22)] ring-1 ring-yellow-400/30'
                     : 'border-white/5 hover:border-indigo-500/30'
                 }`}
               >
-                {isMostRecent && (
+                {/* Floating Banner for Painel Videos giving extra prestige highlight */}
+                {isPainel && (
+                  <div className="absolute top-3 left-3 z-20 pointer-events-none flex items-center gap-1.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-600 text-black text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-lg border border-yellow-300/30">
+                    <Star className="w-2.5 h-2.5 fill-current text-black animate-spin" />
+                    <span>👑 SUPER DESTAQUE OFICIAL 👑</span>
+                  </div>
+                )}
+
+                {!isPainel && isMostRecent && (
                   <div className="absolute top-3 left-3 z-20 pointer-events-none flex items-center gap-1.5 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-[0_4px_12px_rgba(239,68,68,0.3)] border border-white/10 animate-pulse">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                    <span>⚡ AO VIVO/EM BREVE</span>
+                    <span>⚡ NOVO DESTAQUE</span>
                   </div>
                 )}
 
@@ -128,10 +163,14 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                   )}
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-mono text-indigo-400 font-extrabold uppercase bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
-                      Destaque da Semana
+                    <span className={`text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md border ${
+                      isPainel 
+                        ? 'text-yellow-400 bg-yellow-500/10 border-yellow-400/20' 
+                        : 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
+                    }`}>
+                      {isPainel ? 'Destaque Supremo' : 'Destaque da Semana'}
                     </span>
 
                     <span className="text-[10px] text-gray-500 font-mono">
@@ -140,20 +179,28 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                   </div>
 
                   <div className="space-y-1">
-                    <h4 className="font-sans font-black text-sm text-gray-100 group-hover:text-pink-400 transition-colors line-clamp-2">
+                    <h4 className={`font-sans font-black text-sm group-hover:text-pink-400 transition-colors line-clamp-2 ${
+                      isPainel ? 'text-yellow-100 text-[15px]' : 'text-gray-100'
+                    }`}>
                       {video.title}
                     </h4>
                     {video.author && video.author !== 'Staff PKXD Hub' && (
-                      <p className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">
+                      <p className={`text-[10px] font-black uppercase tracking-wider ${
+                        isPainel ? 'text-yellow-400/90' : 'text-indigo-400'
+                      }`}>
                         👤 Criador: @{video.author.replace('@', '')} ✨
                       </p>
                     )}
-                          <div className="pt-2 border-t border-white/5 space-y-3">
+                  </div>
+
+                  <div className="pt-2 border-t border-white/5 space-y-3">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => openVideo(video.youtubeUrl)}
-                          className="text-xs font-black text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 cursor-pointer"
+                          className={`text-xs font-black inline-flex items-center gap-1 cursor-pointer ${
+                            isPainel ? 'text-yellow-400 hover:text-yellow-300' : 'text-indigo-400 hover:text-indigo-300'
+                          }`}
                         >
                           <Play className="w-3.5 h-3.5 fill-current" />
                           <span>Ver no YouTube</span>
@@ -171,7 +218,7 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                         </button>
                       )}
                     </div>
-                  </div>               </div>
+                  </div>
                 </div>
               </div>
             );

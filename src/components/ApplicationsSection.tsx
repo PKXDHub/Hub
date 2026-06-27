@@ -19,6 +19,7 @@ import {
   Trash2,
   CheckCircle,
   Eye,
+  Star,
   Settings
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -540,33 +541,61 @@ export default function ApplicationsSection({
                               </p>
                             </div>
 
-                            <div className="flex gap-2 pt-2">
+                            <div className="flex flex-wrap gap-2 pt-2">
                               <button
                                 onClick={async () => {
                                   triggerAudio('tap');
-                                  if (!onAddNews) return;
+                                  if (!onAddFeaturedVideo) {
+                                    alert('Erro: onAddFeaturedVideo não está disponível.');
+                                    return;
+                                  }
                                   try {
-                                    onAddNews({
-                                      title: `Live de ${item.creator}! 🎬`,
-                                      excerpt: item.description,
-                                      content: item.url,
-                                      category: 'codes',
-                                      imageUrl: '',
-                                      date: 'Hoje',
+                                    onAddFeaturedVideo({
+                                      title: item.description || `Destaque de ${item.creator}! 🎬`,
+                                      youtubeUrl: item.url,
+                                      type: 'game_highlight',
                                       author: item.creator
                                     });
                                     await deleteDoc(doc(db, 'applications_panel', item.id));
                                     triggerAudio('success');
                                     fetchAllApplications();
                                   } catch (err: any) {
-                                    alert('Erro ao aprovar: ' + err.message);
+                                    alert('Erro ao aprovar no Painel: ' + err.message);
                                   }
                                 }}
-                                className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold font-sans cursor-pointer flex items-center gap-1.5 shadow transition-all active:scale-95"
+                                className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-black font-sans cursor-pointer flex items-center gap-1 shadow-lg transition-all active:scale-95"
                               >
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                <span>Aprovar no Painel</span>
+                                <Star className="w-3.5 h-3.5 fill-current text-black" />
+                                <span>Aprovar no PAINEL 🌟</span>
                               </button>
+
+                              <button
+                                onClick={async () => {
+                                  triggerAudio('tap');
+                                  if (!onAddFeaturedVideo) {
+                                    alert('Erro: onAddFeaturedVideo não está disponível.');
+                                    return;
+                                  }
+                                  try {
+                                    onAddFeaturedVideo({
+                                      title: item.description || `Vídeo de ${item.creator}! 🎬`,
+                                      youtubeUrl: item.url,
+                                      type: 'panel_video',
+                                      author: item.creator
+                                    });
+                                    await deleteDoc(doc(db, 'applications_panel', item.id));
+                                    triggerAudio('success');
+                                    fetchAllApplications();
+                                  } catch (err: any) {
+                                    alert('Erro ao aprovar na Comunidade: ' + err.message);
+                                  }
+                                }}
+                                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black font-sans cursor-pointer flex items-center gap-1 shadow transition-all active:scale-95"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                <span>Aprovar na COMUNIDADE 👥</span>
+                              </button>
+
                               <button
                                 onClick={async () => {
                                   triggerAudio('tap');
@@ -579,7 +608,7 @@ export default function ApplicationsSection({
                                     }
                                   }
                                 }}
-                                className="px-3 py-2 bg-red-650 hover:bg-red-600 text-white rounded-xl text-xs font-bold font-sans cursor-pointer flex items-center gap-1 transition-all active:scale-95"
+                                className="px-3 py-2 bg-red-650 hover:bg-red-600 text-white rounded-xl text-xs font-bold font-sans cursor-pointer flex items-center gap-1 transition-all active:scale-95 ml-auto"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 <span>Excluir</span>

@@ -40,6 +40,9 @@ service cloud.firestore {
     }
 
     // AppSettings rules
+    match /settings/monthly_winner {
+      allow read, write: if true;
+    }
     match /settings/{settingsId} {
       allow read: if true;
       allow create, update: if isAdmin();

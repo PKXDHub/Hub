@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award, Instagram, Lock } from 'lucide-react';
 import { playTapSound, playSuccessSound, playLevelUpSound } from '../utils/audio';
-import { collection, doc, setDoc, getDoc, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 
 const maskEmail = (email?: string | null): string => {
@@ -153,6 +153,18 @@ export default function FanLevelSection({
   // Real database players
   const [dbPlayers, setDbPlayers] = useState<RankedPlayer[]>([]);
   const [leaderboard, setLeaderboard] = useState<RankedPlayer[]>([]);
+
+  // Monthly Winner State
+  interface MonthlyWinner {
+    winnerName: string;
+    winnerLevel: number;
+    winnerFlames: number;
+    winnerXp: number;
+    lastCheckedMonth: number;
+    lastCheckedYear: number;
+    recordedAt: number;
+  }
+  const [monthlyWinner, setMonthlyWinner] = useState<MonthlyWinner | null>(null);
 
   // ==========================================
   // NEW INTERACTIVE XP GAINING METHODS STATES
@@ -440,6 +452,105 @@ export default function FanLevelSection({
       setDbPlayers(players);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'leaderboard');
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time listener for monthly winner and auto-rollover
+  useEffect(() => {
+    const winnerRef = doc(db, 'settings', 'monthly_winner');
+    const unsubscribe = onSnapshot(winnerRef, async (snapshot) => {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      if (snapshot.exists()) {
+        const data = snapshot.data() as MonthlyWinner;
+        setMonthlyWinner(data);
+
+        // Check if month has changed/rolled over compared to the last recorded winner
+        if (data.lastCheckedMonth !== currentMonth || data.lastCheckedYear !== currentYear) {
+          try {
+            const q = query(collection(db, 'leaderboard'));
+            const querySnapshot = await getDocs(q);
+            const players: any[] = [];
+            querySnapshot.forEach((docSnap) => {
+              const pData = docSnap.data();
+              if (pData && pData.id && !pData.id.startsWith('u_')) {
+                players.push(pData);
+              }
+            });
+
+            if (players.length > 0) {
+              const computeScore = (p: any) => {
+                return (Number(p.level || 1) * 10000) + (Number(p.flames || 0) * 100) + Number(p.xp || 0);
+              };
+              players.sort((a, b) => computeScore(b) - computeScore(a));
+              const topPlayer = players[0];
+
+              const newWinner: MonthlyWinner = {
+                winnerName: topPlayer.name || 'Fã Secreto',
+                winnerLevel: Number(topPlayer.level) || 1,
+                winnerFlames: Number(topPlayer.flames) || 0,
+                winnerXp: Number(topPlayer.xp) || 0,
+                lastCheckedMonth: currentMonth,
+                lastCheckedYear: currentYear,
+                recordedAt: Date.now()
+              };
+
+              await setDoc(winnerRef, newWinner);
+              setMonthlyWinner(newWinner);
+            }
+          } catch (err) {
+            console.error("Erro ao registrar vencedor mensal:", err);
+          }
+        }
+      } else {
+        try {
+          const q = query(collection(db, 'leaderboard'));
+          const querySnapshot = await getDocs(q);
+          const players: any[] = [];
+          querySnapshot.forEach((docSnap) => {
+            const pData = docSnap.data();
+            if (pData && pData.id && !pData.id.startsWith('u_')) {
+              players.push(pData);
+            }
+          });
+
+          let winnerName = 'Ainda nenhum';
+          let winnerLevel = 1;
+          let winnerFlames = 0;
+          let winnerXp = 0;
+
+          if (players.length > 0) {
+            const computeScore = (p: any) => {
+              return (Number(p.level || 1) * 10000) + (Number(p.flames || 0) * 100) + Number(p.xp || 0);
+            };
+            players.sort((a, b) => computeScore(b) - computeScore(a));
+            const topPlayer = players[0];
+            winnerName = topPlayer.name || 'Fã Secreto';
+            winnerLevel = Number(topPlayer.level) || 1;
+            winnerFlames = Number(topPlayer.flames) || 0;
+            winnerXp = Number(topPlayer.xp) || 0;
+          }
+
+          const initWinner: MonthlyWinner = {
+            winnerName,
+            winnerLevel,
+            winnerFlames,
+            winnerXp,
+            lastCheckedMonth: currentMonth,
+            lastCheckedYear: currentYear,
+            recordedAt: Date.now()
+          };
+
+          await setDoc(winnerRef, initWinner);
+          setMonthlyWinner(initWinner);
+        } catch (err) {
+          console.error("Erro ao inicializar vencedor mensal:", err);
+        }
+      }
     });
 
     return () => unsubscribe();
@@ -1255,6 +1366,40 @@ export default function FanLevelSection({
                 Atenção, fã-clube! <strong>O ranking de fãs virtual é atualizado e reiniciado todo início de mês</strong> de forma automática. O jogador que ficar em <strong>🥇 1º Lugar (Primeiro Lugar)</strong> no final do mês garantirá um prêmio físico ou digital exclusivo do PKXD Hub! Comece a subir de nível! 🚀
               </p>
             </div>
+
+            {/* Monthly Winner Coronation Card */}
+            {new Date().getDate() <= 3 && monthlyWinner && (
+              <div className="bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-600/15 border-2 border-yellow-400/60 p-4 rounded-2xl text-left space-y-2.5 relative overflow-hidden shadow-[0_0_15px_rgba(245,158,11,0.25)] my-3">
+                {/* Glowing element */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/10 rounded-full filter blur-xl pointer-events-none" />
+                <div className="absolute -bottom-5 -left-5 w-20 h-20 bg-amber-400/10 rounded-full filter blur-xl pointer-events-none" />
+                
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-yellow-400 text-black rounded-xl shadow-lg flex-shrink-0">
+                    <Trophy className="w-5 h-5 fill-current" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase font-mono font-black text-yellow-300 tracking-widest block leading-none">TEMPORADA ANTERIOR</span>
+                    <h5 className="font-sans font-black text-[13px] text-white uppercase tracking-wider">
+                      👑 GRANDE VENCEDOR COROADO! 👑
+                    </h5>
+                  </div>
+                </div>
+
+                <p className="font-sans text-xs text-gray-100 leading-relaxed">
+                  O mês rodou e o fã supremo da última temporada foi definido! Parabéns ao lendário fã-clube oficial de <strong className="text-yellow-300 font-black">@{monthlyWinner.winnerName}</strong>, que alcançou o prestigiado <strong className="text-amber-400 font-bold">Nível {monthlyWinner.winnerLevel}</strong> e manteve <strong className="text-orange-400 font-bold">{monthlyWinner.winnerFlames} 🔥 dias de streak</strong>! 🎉
+                </p>
+
+                <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-mono text-yellow-200">
+                  <span className="font-black flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5" /> REALEZA DO PKXD HUB
+                  </span>
+                  <span className="bg-black/40 px-2 py-0.5 rounded-md text-gray-400 border border-white/5">
+                    Exibido por mais 3 dias
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Leaders List */}
