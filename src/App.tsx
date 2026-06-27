@@ -295,7 +295,7 @@ export default function App() {
       if (isApplicationsRoute) {
         document.title = "PKXD Hub - Inscrições";
       } else {
-        document.title = "PKXD Hub - Spoilers e Novidades";
+        document.title = "Central PK XD - Spoilers e Novidades";
       }
     } catch (e) {
       console.warn(e);
@@ -1329,7 +1329,7 @@ export default function App() {
         admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
       triggerAudio('success');
-      setNotifMessage("✅ Logo do PKXD Hub atualizada! 🤩");
+      setNotifMessage("✅ Logo da Central PK XD atualizada! 🤩");
       setTimeout(() => setNotifMessage(null), 3000);
     } catch (err: any) {
       console.error(err);
@@ -1670,7 +1670,7 @@ export default function App() {
           </div>
           <div className="flex-1 space-y-0.5 text-left pl-1">
             <h5 className="text-[10px] sm:text-[11px] font-mono tracking-widest font-extrabold uppercase flex items-center justify-between text-pink-400">
-              <span>ALERTA PKXD HUB</span>
+              <span>ALERTA CENTRAL PK XD</span>
               <span className="text-[9px] text-gray-500 font-normal">AGORA</span>
             </h5>
             <p className="text-xs sm:text-xs font-sans font-black text-gray-150 leading-relaxed">{notifMessage}</p>
