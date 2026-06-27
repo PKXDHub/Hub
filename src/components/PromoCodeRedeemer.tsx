@@ -1,5 +1,5 @@
-import React from 'react';
-import { Ticket, ExternalLink, Play, Trash2, Edit2, Video, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Ticket, ExternalLink, Play, Trash2, Edit2, Video, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NewsItem } from '../types';
 import { playTapSound } from '../utils/audio';
 
@@ -11,6 +11,7 @@ interface PromoCodeRedeemerProps {
 }
 
 export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEditVideo }: PromoCodeRedeemerProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   
   const handleRedeemClick = () => {
     playTapSound();
@@ -23,6 +24,28 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
       window.open(url, '_blank', 'noreferrer');
     } else {
       window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(url)}`, '_blank', 'noreferrer');
+    }
+  };
+
+  const getYoutubeEmbedId = (url: string) => {
+    try {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    playTapSound();
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollAmount = clientWidth * 0.85;
+      scrollRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -52,10 +75,30 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
             </div>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl self-start sm:self-center">
-            <span className="font-mono text-xs text-amber-300 font-bold">
-              {videos.length} VÍDEO(S) LISTADO(S)
-            </span>
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            {videos.length > 0 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleScroll('left')}
+                  className="p-1.5 bg-zinc-950 hover:bg-zinc-900 text-gray-300 hover:text-white rounded-lg border border-white/5 active:scale-95 transition-all cursor-pointer"
+                  title="Anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleScroll('right')}
+                  className="p-1.5 bg-zinc-950 hover:bg-zinc-900 text-gray-300 hover:text-white rounded-lg border border-white/5 active:scale-95 transition-all cursor-pointer"
+                  title="Próximo"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl">
+              <span className="font-mono text-xs text-amber-300 font-bold">
+                {videos.length} VÍDEO(S) LISTADO(S)
+              </span>
+            </div>
           </div>
         </div>
 
@@ -67,8 +110,8 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
           </p>
         </div>
 
-        {/* Videos with High Premium Highlight Border */}
-        <div className="space-y-4">
+        {/* Videos with High Premium Highlight Border & Horizontal Carousel */}
+        <div className="relative">
           {videos.length === 0 ? (
             <div className="bg-black/20 border border-dashed border-white/5 p-8 rounded-2xl text-center space-y-3">
               <span className="text-2xl block animate-pulse">🔮</span>
@@ -80,100 +123,133 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {videos.map((item) => (
-                <div 
-                  key={item.id}
-                  className="relative p-[2px] rounded-2xl bg-gradient-to-br from-amber-500 via-amber-400/30 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.12)] hover:shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:-translate-y-1 transition-all duration-300 group"
-                >
-                  <div className="bg-zinc-950 p-4.5 rounded-[14px] flex flex-col justify-between h-full space-y-4">
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${
-                            item.date?.includes('Ao Vivo') 
-                              ? 'text-red-400 bg-red-500/15 border-red-500/20 animate-pulse'
-                              : item.date?.includes('Estreia')
-                              ? 'text-purple-400 bg-purple-500/15 border-purple-500/20 font-black'
-                              : item.date?.includes('Agendado') || item.date?.includes('Próxima')
-                              ? 'text-sky-400 bg-sky-500/15 border-sky-500/20'
-                              : 'text-amber-400 bg-amber-500/15 border-amber-500/20'
-                          }`}>
-                            <Sparkles className="w-2.5 h-2.5" />
-                            <span>{item.date || 'CÓDIGO ATIVO'}</span>
-                          </span>
+            <div 
+              ref={scrollRef}
+              className="flex gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {videos.map((item) => {
+                const embedId = getYoutubeEmbedId(item.content);
+                const thumbnailUrl = embedId ? `https://img.youtube.com/vi/${embedId}/0.jpg` : null;
 
-                          {item.scheduledAt && (
-                            <span className="text-[9px] font-mono text-zinc-300 bg-zinc-800/60 px-2 py-0.5 rounded-md border border-white/5 font-bold">
-                              ⏰ {(() => {
-                                try {
-                                  if (item.scheduledAt.includes('T')) {
-                                    const [datePart, timePart] = item.scheduledAt.split('T');
-                                    const [year, month, day] = datePart.split('-');
-                                    const [hour, min] = timePart.split(':');
-                                    return `${day}/${month} às ${hour}:${min}`;
-                                  }
-                                  return item.scheduledAt;
-                                } catch (e) {
-                                  return item.scheduledAt;
-                                }
-                              })()}
+                return (
+                  <div 
+                    key={item.id}
+                    className="snap-start w-[290px] sm:w-[320px] flex-shrink-0 relative p-[2px] rounded-2xl bg-gradient-to-br from-amber-500/80 via-amber-400/20 to-amber-600 shadow-[0_4px_15px_rgba(245,158,11,0.08)] hover:shadow-[0_8px_25px_rgba(245,158,11,0.22)] hover:-translate-y-1 transition-all duration-300 group"
+                  >
+                    <div className="bg-zinc-950 p-4.5 rounded-[14px] flex flex-col justify-between h-full space-y-3">
+                      
+                      <div className="space-y-2">
+                        {/* Video Thumbnail */}
+                        {thumbnailUrl ? (
+                          <div 
+                            onClick={() => handleWatchClick(item.content)}
+                            className="relative aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/5 mb-3 cursor-pointer group-hover:border-amber-400/40 transition-colors"
+                          >
+                            <img 
+                              src={thumbnailUrl} 
+                              alt={item.title} 
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+                              <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-rose-500 transition-all duration-200">
+                                <Play className="w-4 h-4 fill-white translate-x-[1px]" />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-white/5 flex items-center justify-center mb-3">
+                            <Video className="w-8 h-8 text-zinc-700 animate-pulse" />
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                              item.date?.includes('Ao Vivo') 
+                                ? 'text-red-400 bg-red-500/15 border-red-500/20 animate-pulse'
+                                : item.date?.includes('Estreia')
+                                ? 'text-purple-400 bg-purple-500/15 border-purple-500/20 font-black'
+                                : item.date?.includes('Agendado') || item.date?.includes('Próxima')
+                                ? 'text-sky-400 bg-sky-500/15 border-sky-500/20'
+                                : 'text-amber-400 bg-amber-500/15 border-amber-500/20'
+                            }`}>
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>{item.date || 'CÓDIGO ATIVO'}</span>
                             </span>
-                          )}
+
+                            {item.scheduledAt && (
+                              <span className="text-[9px] font-mono text-zinc-300 bg-zinc-800/60 px-2 py-0.5 rounded-md border border-white/5 font-bold">
+                                ⏰ {(() => {
+                                  try {
+                                    if (item.scheduledAt.includes('T')) {
+                                      const [datePart, timePart] = item.scheduledAt.split('T');
+                                      const [year, month, day] = datePart.split('-');
+                                      const [hour, min] = timePart.split(':');
+                                      return `${day}/${month} às ${hour}:${min}`;
+                                    }
+                                    return item.scheduledAt;
+                                  } catch (e) {
+                                    return item.scheduledAt;
+                                  }
+                                })()}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[9px] font-sans text-gray-400 truncate max-w-[120px]">
+                            Por: <strong className="text-gray-300">@{item.author.replace('@', '')}</strong>
+                          </span>
                         </div>
-                        <span className="text-[9px] font-sans text-gray-400 truncate max-w-[120px]">
-                          Por: <strong className="text-gray-300">@{item.author.replace('@', '')}</strong>
-                        </span>
+
+                        <h4 className="font-sans font-black text-xs text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                          {item.title}
+                        </h4>
+                        
+                        <p className="font-sans text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
+                          {item.excerpt}
+                        </p>
                       </div>
 
-                      <h4 className="font-sans font-black text-xs text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
-                        {item.title}
-                      </h4>
-                      
-                      <p className="font-sans text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
-                        {item.excerpt}
-                      </p>
+                      <div className="space-y-2 pt-2 border-t border-white/5">
+                        <button
+                          onClick={() => handleWatchClick(item.content)}
+                          className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-sans text-[11px] font-black tracking-wide uppercase transition-all duration-150 flex items-center justify-center gap-1.5 border border-rose-500/20 cursor-pointer shadow-md active:scale-95"
+                        >
+                          <Play className="w-3 h-3 fill-white" />
+                          <span>ASSISTIR & PEGAR CÓDIGO 🍿</span>
+                        </button>
+
+                        {isAdmin && (
+                          <div className="flex gap-2 justify-end pt-1">
+                            <button
+                              onClick={() => {
+                                playTapSound();
+                                onEditVideo(item);
+                              }}
+                              className="p-1 px-2.5 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 rounded-lg border border-yellow-400/20 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Edit2 className="w-2.5 h-2.5" />
+                              <span>Editar</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                playTapSound();
+                                onDeleteVideo(item.id);
+                              }}
+                              className="p-1 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
-
-                    <div className="space-y-2 pt-2 border-t border-white/5">
-                      <button
-                        onClick={() => handleWatchClick(item.content)}
-                        className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-sans text-[11px] font-black tracking-wide uppercase transition-all duration-150 flex items-center justify-center gap-1.5 border border-rose-500/20 cursor-pointer shadow-md active:scale-95"
-                      >
-                        <Play className="w-3 h-3 fill-white" />
-                        <span>ASSISTIR & PEGAR CÓDIGO 🍿</span>
-                      </button>
-
-                      {isAdmin && (
-                        <div className="flex gap-2 justify-end pt-1">
-                          <button
-                            onClick={() => {
-                              playTapSound();
-                              onEditVideo(item);
-                            }}
-                            className="p-1 px-2.5 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 rounded-lg border border-yellow-400/20 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Edit2 className="w-2.5 h-2.5" />
-                            <span>Editar</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              playTapSound();
-                              onDeleteVideo(item.id);
-                            }}
-                            className="p-1 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                            <span>Excluir</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

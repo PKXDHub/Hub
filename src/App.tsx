@@ -2675,6 +2675,32 @@ export default function App() {
               )}
             </div>
 
+            {/* PWA / Pop-up explanation guide for iOS and Android */}
+            <div className="mb-6 p-4 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-3 text-left">
+              <h5 className="font-sans font-black text-[11px] uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <span>💡 Como garantir que as notificações cheguem no seu Celular (Pop-ups):</span>
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] leading-relaxed text-gray-400 font-sans">
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+                  <p className="font-bold text-gray-200">📱 No iPhone (iOS):</p>
+                  <ol className="list-decimal pl-4 space-y-1">
+                    <li>No Safari, clique no botão de <strong>Compartilhar 📤</strong></li>
+                    <li>Selecione a opção <strong>"Adicionar à Tela de Início"</strong></li>
+                    <li>Abra o aplicativo através do ícone que apareceu no seu celular!</li>
+                    <li>Clique no botão de <strong>"ATIVAR ALERTAS"</strong> acima e dê permissão.</li>
+                  </ol>
+                </div>
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+                  <p className="font-bold text-gray-200">🤖 No Android (Chrome):</p>
+                  <ol className="list-decimal pl-4 space-y-1">
+                    <li>Clique no botão de <strong>"ATIVAR ALERTAS"</strong> acima.</li>
+                    <li>Quando o Chrome perguntar, clique em <strong>"Permitir"</strong> ou "Autorizar".</li>
+                    <li>Para melhor funcionamento, clique nos 3 pontinhos do Chrome e em <strong>"Adicionar à Tela Inicial"</strong>.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
             {/* Notification logs list block */}
             <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2">
               {notificationList.length === 0 ? (

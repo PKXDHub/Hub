@@ -142,29 +142,7 @@ export default function TheoriesSection({ theories, isAdmin, currentUser, onLike
                       <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-emerald-400' : ''}`} />
                       <span>Concordar • {theory.likes || 0} Votos</span>
                     </button>
-
-                    <button
-                      onClick={() => toggleComments(theory.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                        openComments[theory.id]
-                          ? 'bg-pink-500/10 border-pink-500/30 text-pink-400 font-extrabold'
-                          : 'bg-zinc-900 border-zinc-800 hover:border-pink-500/30 text-gray-300 hover:text-pink-400'
-                      }`}
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Discussão ({openComments[theory.id] ? 'Aberto' : 'Ver'})</span>
-                    </button>
                   </div>
-
-                  {openComments[theory.id] && (
-                    <CommentsSection
-                      targetId={theory.id}
-                      targetType="theory"
-                      currentUser={currentUser}
-                      isAdmin={isAdmin}
-                      onAddXP={onAddXP}
-                    />
-                  )}
                 </div>
               </div>
             );

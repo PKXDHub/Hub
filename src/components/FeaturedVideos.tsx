@@ -148,9 +148,7 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                         👤 Criador: @{video.author.replace('@', '')} ✨
                       </p>
                     )}
-                  </div>
-
-                  <div className="pt-2 border-t border-white/5 space-y-3">
+                          <div className="pt-2 border-t border-white/5 space-y-3">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-3">
                         <button
@@ -159,18 +157,6 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                         >
                           <Play className="w-3.5 h-3.5 fill-current" />
                           <span>Ver no YouTube</span>
-                        </button>
-
-                        <button
-                          onClick={() => toggleComments(video.id)}
-                          className={`text-xs font-black inline-flex items-center gap-1 cursor-pointer transition-all ${
-                            openComments[video.id] 
-                              ? 'text-pink-400 font-black' 
-                              : 'text-gray-400 hover:text-pink-400'
-                          }`}
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>Comentários ({openComments[video.id] ? 'Fechar' : 'Ver'})</span>
                         </button>
                       </div>
 
@@ -185,17 +171,7 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                         </button>
                       )}
                     </div>
-
-                    {openComments[video.id] && (
-                      <CommentsSection
-                        targetId={video.id}
-                        targetType="video"
-                        currentUser={currentUser}
-                        isAdmin={isAdmin}
-                        onAddXP={onAddXP}
-                      />
-                    )}
-                  </div>
+                  </div>               </div>
                 </div>
               </div>
             );

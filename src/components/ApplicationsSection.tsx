@@ -272,8 +272,13 @@ export default function ApplicationsSection({
 
       try {
         await setDoc(doc(db, collectionName, id), payload);
-      } catch (dbErr) {
-        handleFirestoreError(dbErr, OperationType.WRITE, collectionName);
+      } catch (dbErr: any) {
+        console.warn("Erro no Firestore, verificando código do erro:", dbErr);
+        if (dbErr?.code === 'permission-denied') {
+          throw new Error('Permissão Negada de Nuvem (Firestore): A gravação foi rejeitada pelas regras de segurança. Entre em contato com um administrador!');
+        } else {
+          handleFirestoreError(dbErr, OperationType.WRITE, collectionName);
+        }
       }
       
       triggerAudio('levelUp');
@@ -289,9 +294,23 @@ export default function ApplicationsSection({
       resetForms();
     } catch (err: any) {
       console.error(err);
+      let errMsg = 'Erro ao processar inscrição. Verifique as informações e tente novamente.';
+      try {
+        if (err.message && err.message.startsWith('{')) {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error && (parsed.error.includes('permission-denied') || parsed.error.includes('Missing or insufficient permissions'))) {
+            errMsg = 'A gravação foi rejeitada devido a regras de segurança do banco de dados (Firestore). Verifique sua autenticação.';
+          } else {
+            errMsg = parsed.error || errMsg;
+          }
+        } else if (err.message) {
+          errMsg = err.message;
+        }
+      } catch (e) {}
+
       setSubmitStatus({
         success: false,
-        message: err.message || 'Erro ao processar inscrição. Verifique as informações e tente novamente.'
+        message: errMsg
       });
     } finally {
       setIsSubmitting(false);
