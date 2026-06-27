@@ -29,6 +29,11 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
     // News rules
     match /news/{newsId} {
       allow read: if true;
@@ -60,7 +65,8 @@ service cloud.firestore {
     // Theories rules
     match /theories/{theoryId} {
       allow read: if true;
-      allow create, update: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (incoming().diff(existing()).affectedKeys().hasOnly(['likes']) && incoming().likes == existing().likes + 1);
       allow delete: if isDeletable();
     }
 
@@ -81,27 +87,39 @@ service cloud.firestore {
     // Leaderboard rules
     match /leaderboard/{playerId} {
       allow read: if true;
-      allow create, update: if true;
+      allow create, update: if (isSignedIn() && request.auth.uid == playerId)
+                               || (request.resource != null && request.resource.data != null && 'admin_secret' in request.resource.data && request.resource.data.admin_secret == "pkxd2026_super_secret_admin_key");
       allow delete: if isDeletable();
     }
 
     // Applications rules
     match /applications_panel/{appId} {
-      allow read, write: if true;
+      allow read: if isDeletable();
+      allow create, update: if true;
+      allow delete: if isDeletable();
     }
     match /applications_shorts/{appId} {
-      allow read, write: if true;
+      allow read: if isDeletable();
+      allow create, update: if true;
+      allow delete: if isDeletable();
     }
     match /applications_theories/{appId} {
-      allow read, write: if true;
+      allow read: if isDeletable();
+      allow create, update: if true;
+      allow delete: if isDeletable();
     }
     match /applications_admin/{appId} {
-      allow read, write: if true;
+      allow read: if isDeletable();
+      allow create, update: if true;
+      allow delete: if isDeletable();
     }
 
     // Comments rules
     match /comments/{commentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isDeletable();
     }
   }
 }
