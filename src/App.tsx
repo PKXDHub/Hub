@@ -1760,14 +1760,14 @@ export default function App() {
               }}
               className={`border-2 p-2.5 px-3 rounded-2xl transition-all cursor-pointer flex items-center gap-1.5 text-[11px] font-extrabold shadow-md ${
                 siteTheme === 'neutral'
-                  ? 'bg-zinc-800 text-yellow-400 border-yellow-500/50 hover:bg-zinc-700'
+                  ? 'bg-amber-500 text-black border-amber-500/60 hover:bg-amber-400'
                   : 'bg-purple-800 text-purple-200 border-purple-500/50 hover:bg-purple-900'
               }`}
-              title={siteTheme === 'neutral' ? "Alternar para Tema PKXD (Colorido)" : "Alternar para Tema Neutro (Branco/Preto/Dourado/Prata/Roxo)"}
+              title={siteTheme === 'neutral' ? "Alternar para Tema PKXD (Colorido)" : "Alternar para Tema Neutro (Branco, Metal, Dourado e Roxo)"}
             >
               <Palette className="w-3.5 h-3.5" />
               <span className="hidden md:inline">
-                {siteTheme === 'neutral' ? 'PREMIUM NEUTRO' : 'TEMA PKXD'}
+                {siteTheme === 'neutral' ? 'TEMA NEUTRO 🌟' : 'TEMA PKXD 🎨'}
               </span>
             </button>
 

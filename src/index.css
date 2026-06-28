@@ -8,39 +8,165 @@
 }
 
 .theme-neutral {
-  --glow-1: rgba(212, 175, 55, 0.12); /* Gold */
-  --glow-2: rgba(148, 163, 184, 0.1);  /* Silver */
-  --glow-3: rgba(139, 92, 246, 0.1);   /* Purple */
+  --glow-1: rgba(124, 58, 237, 0.08); /* Purple Glow */
+  --glow-2: rgba(234, 179, 8, 0.08);   /* Gold Glow */
+  --glow-3: rgba(148, 163, 184, 0.06);  /* Silver Glow */
 
-  /* Neutral base colors (Black, Dark Charcoal, Silvers, Whites) */
-  --color-slate-950: #050505; /* Black */
-  --color-slate-900: #121212; /* Dark Charcoal */
-  --color-zinc-950: #0a0a0a;  /* Deep off-black */
-  --color-zinc-900: #141414;  /* Charcoal Panel */
-  --color-zinc-850: #1a1a1a;
-  --color-zinc-800: #222222;
-  --color-neutral-950: #000000;
-  --color-neutral-900: #0d0d0d;
-  --color-purple-950: #060606;
-  --color-purple-900: #161616;
-  --color-purple-800: #262626;
-  --color-purple-700: #363636;
-  --color-purple-600: #6b21a8; /* Elegant purple (Roxo) */
-  --color-purple-500: #8b5cf6; /* Vibrant purple (Roxo) */
-  --color-indigo-950: #030303;
-  --color-indigo-900: #0f0f0f;
+  background-color: #ffffff !important;
+  color: #1e1b4b !important;
 
-  /* Highlights: DOURADO (Gold), PRATA (Silver), ROXO (Purple) */
-  /* Dourado (Gold) highlights - replacing yellows */
-  --color-yellow-400: #d4af37; /* Metallic Gold */
-  --color-yellow-300: #ffd700; /* Bright Gold */
+  /* Neutral base colors (White, Light Gray, Soft purple/silver backgrounds) */
+  --color-slate-950: #ffffff; /* Fundo branco!!! */
+  --color-slate-900: #fafaf9; /* Warm off-white */
+  --color-zinc-950: #ffffff;
+  --color-zinc-900: #f5f5f4;  /* Crisp light panel background */
+  --color-zinc-850: #e7e5e4;
+  --color-zinc-800: #d6d3d1;
+  --color-neutral-950: #ffffff;
+  --color-neutral-900: #fcfcfc;
+  --color-purple-950: #ffffff;
+  --color-purple-900: #faf5ff; /* Extremely light purple tint */
+  --color-purple-800: #f3e8ff;
+  --color-purple-700: #e9d5ff;
+  --color-purple-600: #7c3aed; /* Elegant Purple (Roxo) */
+  --color-purple-500: #8b5cf6;
+  --color-indigo-950: #ffffff;
+  --color-indigo-900: #f5f3ff;
 
-  /* Prata (Silver) highlights - replacing cyans */
-  --color-cyan-400: #cbd5e1;   /* Sleek Silver */
+  /* Text colors to be black/dark charcoal for perfect legibility */
+  --color-slate-100: #18181b; /* Charcoal black */
+  --color-gray-100: #0f172a;
+  --color-gray-200: #1e293b;
+  --color-gray-300: #334155;
+  --color-gray-400: #4b5563;
+  --color-gray-500: #6b7280;
 
-  /* Roxo (Purple) highlights - replacing pinks */
-  --color-pink-500: #a855f7;   /* Amethyst Purple */
-  --color-pink-400: #c084fc;   /* Light Purple */
+  /* Highlights: DOURADO (Gold) */
+  --color-yellow-400: #ca8a04; /* Gold */
+  --color-yellow-300: #eab308; /* Bright Gold */
+
+  /* Silver highlights */
+  --color-cyan-400: #64748b;   /* Slate/Metal Silver */
+
+  /* Roxo (Purple) highlights */
+  --color-pink-500: #7c3aed;   /* Amethyst purple (Roxo) */
+  --color-pink-400: #8b5cf6;
+}
+
+/* Escritas pretas com degradê para cor de metal */
+.theme-neutral h1:not(.keep-color),
+.theme-neutral h2:not(.keep-color),
+.theme-neutral h3:not(.keep-color),
+.theme-neutral .metal-text {
+  background: linear-gradient(135deg, #09090b 0%, #3f3f46 50%, #71717a 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-fill-color: transparent !important;
+  display: inline-block;
+}
+
+/* Keep inner spans/strong elements highlighted with their correct rich colors */
+.theme-neutral h1 *,
+.theme-neutral h2 *,
+.theme-neutral h3 *,
+.theme-neutral h4 *,
+.theme-neutral .metal-text * {
+  -webkit-text-fill-color: initial !important;
+  text-fill-color: initial !important;
+  background-clip: initial !important;
+  background: none !important;
+}
+
+/* Force dark readable text everywhere in neutral light mode */
+.theme-neutral p,
+.theme-neutral span:not(.text-yellow-300):not(.text-yellow-400):not(.text-fuchsia-400):not(.text-pink-400):not(.text-purple-300):not(.text-emerald-300):not(.bg-purple-800 *):not(.bg-emerald-500 *):not(.bg-amber-500 *):not(.bg-gradient-to-r *),
+.theme-neutral li,
+.theme-neutral label,
+.theme-neutral input,
+.theme-neutral textarea {
+  color: #1c1917 !important;
+}
+
+/* Specific Gold overrides for titles/badges in highlight sections */
+.theme-neutral .text-yellow-300,
+.theme-neutral .text-yellow-400,
+.theme-neutral .text-yellow-350,
+.theme-neutral .text-amber-300,
+.theme-neutral .text-amber-400 {
+  color: #d97706 !important; /* Dourado */
+}
+
+/* Specific Purple overrides */
+.theme-neutral .text-pink-500,
+.theme-neutral .text-pink-400,
+.theme-neutral .text-purple-300,
+.theme-neutral .text-purple-400,
+.theme-neutral .text-fuchsia-400,
+.theme-neutral .text-cyan-400,
+.theme-neutral .text-indigo-400 {
+  color: #7c3aed !important; /* Roxo */
+}
+
+/* CONTAGEM REGRESSIVA EM DOURADO METÁLICO COM BRILHO */
+.theme-neutral #gift-countdown-timer-clocks > div,
+.theme-neutral .grid-cols-4 > div {
+  background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%) !important;
+  border-color: #f1c40f !important;
+  border-bottom-width: 4px !important;
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.45) !important;
+}
+
+.theme-neutral #gift-countdown-timer-clocks span,
+.theme-neutral .grid-cols-4 span {
+  color: #1e1b4b !important; /* Deep contrast indigo-black text */
+  -webkit-text-fill-color: #1e1b4b !important;
+  text-shadow: none !important;
+  background-clip: initial !important;
+}
+
+/* Highlights / Cards in Gold */
+.theme-neutral #spoiler-revealed-state,
+.theme-neutral .border-yellow-400 {
+  border-color: #eab308 !important;
+  box-shadow: 0 0 25px rgba(234, 179, 8, 0.2) !important;
+  background-color: #ffffff !important;
+}
+
+/* Overriding dark background panels inside neutral theme to be clean off-white */
+.theme-neutral .bg-black\/60,
+.theme-neutral .bg-black\/75,
+.theme-neutral .bg-black\/40,
+.theme-neutral .bg-zinc-900\/40,
+.theme-neutral .bg-zinc-950\/40 {
+  background-color: rgba(245, 243, 255, 0.75) !important; /* Soft white background with slight purple tint */
+  backdrop-filter: blur(12px) !important;
+  border-color: rgba(124, 58, 237, 0.15) !important;
+}
+
+/* Ensure micro banner remains visible & readable */
+.theme-neutral .bg-gradient-to-r.from-purple-800.via-pink-600.to-purple-900 {
+  background: linear-gradient(to right, #4c1d95, #6d28d9, #4c1d95) !important;
+}
+
+.theme-neutral .bg-gradient-to-r.from-purple-800.via-pink-600.to-purple-900 * {
+  color: #ffffff !important;
+}
+
+/* Style main buttons to match Roxo theme */
+.theme-neutral button:not(.bg-emerald-500):not(.bg-red-500):not(.bg-zinc-800):not(#gift-countdown-timer-clocks *):not(.grid-cols-4 *),
+.theme-neutral .bg-gradient-to-r.from-pink-500 {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(124, 58, 237, 0.25) !important;
+}
+
+.theme-neutral button:hover:not(.bg-emerald-500):not(.bg-red-500):not(.bg-zinc-800):not(#gift-countdown-timer-clocks *):not(.grid-cols-4 *) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+}
+
+.theme-neutral button:not(.bg-emerald-500):not(.bg-red-500):not(.bg-zinc-800) * {
+  color: #ffffff !important;
 }
 
 @theme {
@@ -79,4 +205,9 @@
 .bg-pkxd-texture {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M30,30 Q30,25 35,25 Q40,25 40,30 Q40,35 35,35 Q30,35 30,30 Z' fill='rgba(255,255,255,0.025)'/%3E%3Cpath d='M50,30 Q50,25 55,25 Q60,25 60,30 Q60,35 55,35 Q50,35 50,30 Z' fill='rgba(255,255,255,0.025)'/%3E%3Cpath d='M35,48 Q45,55 55,48' stroke='rgba(255,255,255,0.025)' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M100,85 L105,90 M105,85 L100,90' stroke='rgba(255,255,255,0.025)' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='92' cy='25' r='2.5' fill='rgba(255,255,255,0.025)'/%3E%3Cpath d='M15,90 L18,97 L25,94 L15,90' stroke='rgba(255,255,255,0.02)' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat: repeat;
+}
+
+.theme-neutral.bg-pkxd-texture,
+.theme-neutral .bg-pkxd-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M30,30 Q30,25 35,25 Q40,25 40,30 Q40,35 35,35 Q30,35 30,30 Z' fill='rgba(124,58,237,0.015)'/%3E%3Cpath d='M50,30 Q50,25 55,25 Q60,25 60,30 Q60,35 55,35 Q50,35 50,30 Z' fill='rgba(124,58,237,0.015)'/%3E%3Cpath d='M35,48 Q45,55 55,48' stroke='rgba(124,58,237,0.015)' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M100,85 L105,90 M105,85 L100,90' stroke='rgba(124,58,237,0.015)' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='92' cy='25' r='2.5' fill='rgba(124,58,237,0.015)'/%3E%3Cpath d='M15,90 L18,97 L25,94 L15,90' stroke='rgba(124,58,237,0.01)' stroke-width='2' fill='none'/%3E%3C/svg%3E") !important;
 }
