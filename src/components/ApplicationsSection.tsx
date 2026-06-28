@@ -51,8 +51,19 @@ export default function ApplicationsSection({
 }: ApplicationsSectionProps) {
   const [activeTab, setActiveTab] = useState<'panel' | 'shorts' | 'theory' | 'admin'>(() => {
     try {
-      if (window.location.hash.toLowerCase().includes('admin') || window.location.search.toLowerCase().includes('admin')) {
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (hash.includes('admin') || search.includes('admin')) {
         return 'admin';
+      }
+      if (hash.includes('shorts') || search.includes('shorts')) {
+        return 'shorts';
+      }
+      if (hash.includes('theory') || search.includes('theory') || hash.includes('teoria') || search.includes('teoria')) {
+        return 'theory';
+      }
+      if (hash.includes('panel') || search.includes('panel') || hash.includes('destaque') || search.includes('destaque')) {
+        return 'panel';
       }
     } catch (e) {}
     return 'panel';
@@ -63,8 +74,16 @@ export default function ApplicationsSection({
   useEffect(() => {
     const checkHash = () => {
       try {
-        if (window.location.hash.toLowerCase().includes('admin') || window.location.search.toLowerCase().includes('admin')) {
+        const hash = window.location.hash.toLowerCase();
+        const search = window.location.search.toLowerCase();
+        if (hash.includes('admin') || search.includes('admin')) {
           setActiveTab('admin');
+        } else if (hash.includes('shorts') || search.includes('shorts')) {
+          setActiveTab('shorts');
+        } else if (hash.includes('theory') || search.includes('theory') || hash.includes('teoria') || search.includes('teoria')) {
+          setActiveTab('theory');
+        } else if (hash.includes('panel') || search.includes('panel') || hash.includes('destaque') || search.includes('destaque')) {
+          setActiveTab('panel');
         }
       } catch (e) {}
     };

@@ -218,6 +218,8 @@ export default function App() {
     try {
       const isGitHubPages = window.location.hostname.includes('github.io');
       let targetPath = path;
+      const hashMatch = path.match(/#\w+$/);
+      const hashSuffix = hashMatch ? hashMatch[0] : '';
 
       if (isGitHubPages) {
         // On GitHub Pages, let's preserve the repository prefix subdirectory to prevent global root 404s
@@ -227,24 +229,24 @@ export default function App() {
         if (path.toLowerCase().includes('inscric') || path.toLowerCase().includes('inscricao')) {
           // Use the replicated directory that contains index.html
           if (base && base !== 'inscricoes' && base !== 'Inscricoes' && base !== 'Inscrições') {
-            targetPath = `/${base}/inscricoes/`;
+            targetPath = `/${base}/inscricoes/${hashSuffix}`;
           } else {
-            targetPath = `/inscricoes/`;
+            targetPath = `/inscricoes/${hashSuffix}`;
           }
         } else {
           // Back to main index
           if (base && base !== 'inscricoes' && base !== 'Inscricoes' && base !== 'Inscrições') {
-            targetPath = `/${base}/`;
+            targetPath = `/${base}/${hashSuffix}`;
           } else {
-            targetPath = `/`;
+            targetPath = `/${hashSuffix}`;
           }
         }
       } else {
         // Standard environments
         if (path.toLowerCase().includes('inscric') || path.toLowerCase().includes('inscricao')) {
-          targetPath = '/inscricoes/';
+          targetPath = `/inscricoes/${hashSuffix}`;
         } else {
-          targetPath = '/';
+          targetPath = `/${hashSuffix}`;
         }
       }
 
@@ -2243,6 +2245,7 @@ export default function App() {
                   currentUser={user}
                   onDelete={handleDeleteFeaturedVideo}
                   onAddXP={handleAddFanXP}
+                  onNavigate={navigateTo}
                 />
               </div>
 
@@ -2320,6 +2323,7 @@ export default function App() {
             shorts={shortsList}
             isAdmin={isAdmin}
             onDelete={handleDeleteShort}
+            onNavigate={navigateTo}
           />
         </div>
 
@@ -2332,6 +2336,7 @@ export default function App() {
             onDelete={handleDeleteTheory}
             onLike={handleLikeTheory}
             onAddXP={handleAddFanXP}
+            onNavigate={navigateTo}
           />
         </div>
 
@@ -2506,15 +2511,12 @@ export default function App() {
                   <span className="text-[10px] text-gray-500 block">ADMINISTRAÇÃO & COMUNICADOS</span>
                   
                   {/* Candidate to Admin Form button */}
-                  <a 
-                    href="https://forms.gle/LGDPe1SrsTdcwNZCA"
-                    target="_blank" 
-                    rel="noreferrer"
-                    onClick={() => triggerAudio('tap')}
+                  <button 
+                    onClick={() => { triggerAudio('tap'); navigateTo('/inscricoes#admin'); }}
                     className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-sans font-black text-xs uppercase tracking-wide rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md border border-indigo-500/30 cursor-pointer hover:scale-[1.01]"
                   >
                     <span>🔐 Candidatar a Admin 🌟</span>
-                  </a>
+                  </button>
 
                   <a 
                     href={WHATSAPP_CHANNEL_URL} 

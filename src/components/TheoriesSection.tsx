@@ -11,9 +11,10 @@ interface TheoriesSectionProps {
   onLike: (id: string) => void;
   onDelete: (id: string) => void;
   onAddXP: (amount: number, reason: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
-export default function TheoriesSection({ theories, isAdmin, currentUser, onLike, onDelete, onAddXP }: TheoriesSectionProps) {
+export default function TheoriesSection({ theories, isAdmin, currentUser, onLike, onDelete, onAddXP, onNavigate }: TheoriesSectionProps) {
   // Toggle state for which theory comments are expanded
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
 
@@ -71,14 +72,23 @@ export default function TheoriesSection({ theories, isAdmin, currentUser, onLike
             </p>
           </div>
         </div>
-        <a
-          href="https://forms.gle/xzPA9LYofmPU4JTE9"
-          target="_blank"
-          rel="noreferrer"
-          className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center inline-flex items-center justify-center gap-2 border border-white/10"
-        >
-          <span>✨ Enviar Teorias</span>
-        </a>
+        {onNavigate ? (
+          <button
+            onClick={() => { playTapSound(); onNavigate('/inscricoes#theory'); }}
+            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center inline-flex items-center justify-center gap-2 border border-white/10 cursor-pointer"
+          >
+            <span>✨ Enviar Teorias</span>
+          </button>
+        ) : (
+          <a
+            href="https://forms.gle/xzPA9LYofmPU4JTE9"
+            target="_blank"
+            rel="noreferrer"
+            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center inline-flex items-center justify-center gap-2 border border-white/10"
+          >
+            <span>✨ Enviar Teorias</span>
+          </a>
+        )}
       </div>
 
       {theories.length === 0 ? (

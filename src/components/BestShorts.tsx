@@ -7,9 +7,10 @@ interface BestShortsProps {
   shorts: ShortItem[];
   isAdmin: boolean;
   onDelete: (id: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
-export default function BestShorts({ shorts, isAdmin, onDelete }: BestShortsProps) {
+export default function BestShorts({ shorts, isAdmin, onDelete, onNavigate }: BestShortsProps) {
   const getYoutubeEmbedId = (url: string) => {
     try {
       // Find matches for shorts, e.g., youtube.com/shorts/XYZ or youtube.com/watch?v=XYZ
@@ -48,14 +49,23 @@ export default function BestShorts({ shorts, isAdmin, onDelete }: BestShortsProp
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
-          <a
-            href="https://forms.gle/bmJqrXkSa9uibQqo9"
-            target="_blank"
-            rel="noreferrer"
-            className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5"
-          >
-            <span>📱 Enviar Shorts</span>
-          </a>
+          {onNavigate ? (
+            <button
+              onClick={() => { playTapSound(); onNavigate('/inscricoes#shorts'); }}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>📱 Enviar Shorts</span>
+            </button>
+          ) : (
+            <a
+              href="https://forms.gle/bmJqrXkSa9uibQqo9"
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5"
+            >
+              <span>📱 Enviar Shorts</span>
+            </a>
+          )}
           <span className="font-black text-[9px] uppercase font-mono px-3 py-1 bg-cyan-950/40 text-cyan-300 rounded-full border border-cyan-500/20 animate-pulse">
             Premium Curado ⭐
           </span>

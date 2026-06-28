@@ -9,9 +9,10 @@ interface FeaturedVideosProps {
   currentUser: any;
   onDelete: (id: string) => void;
   onAddXP?: (amount: number, reason: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
-export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete, onAddXP }: FeaturedVideosProps) {
+export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete, onAddXP, onNavigate }: FeaturedVideosProps) {
   const [activeTab, setActiveTab] = useState<'painel' | 'comunidade'>('painel');
 
   const mostRecentVideoId = videos.length > 0
@@ -64,14 +65,23 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
-          <a
-            href="https://forms.gle/bmJqrXkSa9uibQqo9"
-            target="_blank"
-            rel="noreferrer"
-            className="px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-pink-500/20 hover:from-indigo-500/30 hover:to-pink-500/30 text-indigo-300 border border-indigo-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5"
-          >
-            <span>✨ Enviar Conteúdo</span>
-          </a>
+          {onNavigate ? (
+            <button
+              onClick={() => { playTapSound(); onNavigate('/inscricoes#panel'); }}
+              className="px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-pink-500/20 hover:from-indigo-500/30 hover:to-pink-500/30 text-indigo-300 border border-indigo-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>✨ Enviar Conteúdo</span>
+            </button>
+          ) : (
+            <a
+              href="https://forms.gle/bmJqrXkSa9uibQqo9"
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-gradient-to-r from-indigo-500/20 to-pink-500/20 hover:from-indigo-500/30 hover:to-pink-500/30 text-indigo-300 border border-indigo-500/40 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 text-center flex items-center justify-center gap-1.5"
+            >
+              <span>✨ Enviar Conteúdo</span>
+            </a>
+          )}
           <span className="font-black text-[9px] uppercase font-mono px-3 py-1 bg-indigo-950/45 text-indigo-300 rounded-full border border-indigo-500/25">
             Destaques ⭐
           </span>
