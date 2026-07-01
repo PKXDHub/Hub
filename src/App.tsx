@@ -282,6 +282,43 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsAppInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsAppInstalled(true);
+    }
+    setDeferredPrompt(null);
+  };
   
   const [newsToEdit, setNewsToEdit] = useState<NewsItem | null>(null);
   const [notifMessage, setNotifMessage] = useState<string | null>(null);
@@ -2686,29 +2723,64 @@ export default function App() {
               )}
             </div>
 
-            {/* PWA / Pop-up explanation guide for iOS and Android */}
-            <div className="mb-6 p-4 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-3 text-left">
-              <h5 className="font-sans font-black text-[11px] uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                <span>💡 Como garantir que as notificações cheguem no seu Celular (Pop-ups):</span>
+            {/* PWA App Installation Card */}
+            <div className="mb-6 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h4 className="font-sans font-black text-xs uppercase tracking-wider text-yellow-400">📲 Baixar Aplicativo Oficial do PKXD Hub</h4>
+                <p className="text-[11px] text-gray-400 leading-normal">
+                  Instale o site direto no seu celular para abrir em tela cheia igual a um jogo de verdade, sem carregar abas do navegador! É super leve e rápido.
+                </p>
+              </div>
+              
+              {isAppInstalled ? (
+                <div className="flex-shrink-0 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 self-stretch sm:self-auto justify-center">
+                  Aplicativo Instalado! 🎉
+                </div>
+              ) : deferredPrompt ? (
+                <button
+                  onClick={() => {
+                    triggerAudio('tap');
+                    handleInstallApp();
+                  }}
+                  className="flex-shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-sans font-black uppercase text-[10px] tracking-wider rounded-xl cursor-pointer shadow-lg active:scale-95 transition-all text-center w-full sm:w-auto"
+                >
+                  📥 INSTALAR APP NO CELULAR
+                </button>
+              ) : (
+                <div className="text-[10px] text-yellow-400/80 font-bold uppercase border border-yellow-400/25 bg-yellow-400/5 px-3 py-1.5 rounded-xl text-center self-stretch sm:self-auto leading-normal">
+                  Pelo Chrome: Clique em (⋮) &gt; "Instalar"
+                </div>
+              )}
+            </div>
+
+            {/* Google Native Notifications explanation panel */}
+            <div className="mb-6 p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/25 space-y-3 text-left">
+              <h5 className="font-sans font-black text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <span className="animate-pulse">📢</span>
+                <span>Sobre as notificações não chegarem como notificação nativa do Google:</span>
               </h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] leading-relaxed text-gray-400 font-sans">
-                <div className="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
-                  <p className="font-bold text-gray-200">📱 No iPhone (iOS):</p>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>No Safari, clique no botão de <strong>Compartilhar 📤</strong></li>
-                    <li>Selecione a opção <strong>"Adicionar à Tela de Início"</strong></li>
-                    <li>Abra o aplicativo através do ícone que apareceu no seu celular!</li>
-                    <li>Clique no botão de <strong>"ATIVAR ALERTAS"</strong> acima e dê permissão.</li>
-                  </ol>
-                </div>
-                <div className="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
-                  <p className="font-bold text-gray-200">🤖 No Android (Chrome):</p>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>Clique no botão de <strong>"ATIVAR ALERTAS"</strong> acima.</li>
-                    <li>Quando o Chrome perguntar, clique em <strong>"Permitir"</strong> ou "Autorizar".</li>
-                    <li>Para melhor funcionamento, clique nos 3 pontinhos do Chrome e em <strong>"Adicionar à Tela Inicial"</strong>.</li>
-                  </ol>
-                </div>
+              <p className="text-[11px] text-gray-300 leading-relaxed font-sans">
+                Atualmente, as notificações do site funcionam em tempo real por um canal de escuta do Firebase (Firestore). Elas atualizam o sininho instantaneamente e mostram alertas na tela do usuário enquanto ele está navegando no site.
+              </p>
+              
+              <div className="space-y-2 pt-2 border-t border-cyan-500/10">
+                <p className="font-sans font-black text-[10px] uppercase tracking-wide text-yellow-400">
+                  🔔 Para que cheguem de forma nativa do Google (com o site fechado e o celular no bolso):
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-gray-300 space-y-1.5 font-sans leading-relaxed">
+                  <li>
+                    <strong className="text-white">Instale o PKXD Hub como App:</strong> Clique no botão <strong className="text-amber-300">"Instalar App no Celular"</strong> acima. Quando instalado, o celular registra o Service Worker que monitora notificações em segundo plano!
+                  </li>
+                  <li>
+                    <strong className="text-white">Ative as Permissões no Aparelho:</strong> Clique em <strong className="text-pink-400">"ATIVAR ALERTAS"</strong> acima e selecione "Permitir" quando o navegador/celular solicitar.
+                  </li>
+                  <li>
+                    <strong className="text-white">Não Force o Fechamento Completo:</strong> Evite limpar o aplicativo da lista de tarefas recentes ("limpar memória") para que o serviço do Android/Google possa entregar o alerta instantaneamente.
+                  </li>
+                  <li>
+                    <strong className="text-white">Dica para iOS (iPhones):</strong> Toque no ícone de compartilhar <strong className="text-cyan-300">📤</strong>, selecione <strong className="text-cyan-300">"Adicionar à Tela de Início"</strong>, abra o app por lá e ative os alertas!
+                  </li>
+                </ul>
               </div>
             </div>
 
@@ -2776,10 +2848,7 @@ export default function App() {
             </div>
 
             {/* Quick footer action info */}
-            <div className="mt-6 pt-4 border-t border-white/10 text-center space-y-4">
-              <span className="font-sans text-[10px] text-gray-500 italic block">
-                *Toda vez que o admin publica ou atrasa spoilers, uma notificação mundial é dispersada em tempo real!
-              </span>
+            <div className="mt-6 pt-4 border-t border-white/10 text-center">
               <button
                 onClick={() => {
                   setIsNotifOverlayOpen(false);

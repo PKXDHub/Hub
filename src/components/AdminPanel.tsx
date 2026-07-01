@@ -2929,33 +2929,54 @@ export default function AdminPanel({
                               <span className="text-[10px] uppercase font-bold text-gray-400 block font-mono">Descrição/Apresentação:</span>
                               <p className="text-xs text-gray-300 bg-zinc-950/50 p-2.5 rounded-lg leading-relaxed">{item.description}</p>
                             </div>
-                            <div className="flex items-center gap-2 justify-end pt-1.5 border-t border-white/5">
+                            <div className="flex flex-wrap items-center gap-2 justify-end pt-1.5 border-t border-white/5">
                               <button
                                 type="button"
                                 onClick={async () => {
                                   playTapSound();
                                   try {
-                                    onAddNews({
-                                      title: `Live de ${item.creator}! 🎬`,
-                                      excerpt: item.description,
-                                      content: item.url,
-                                      category: 'codes',
-                                      imageUrl: '',
-                                      date: 'Hoje',
+                                    onAddFeaturedVideo({
+                                      title: item.description || `Destaque de ${item.creator}! 🎬`,
+                                      youtubeUrl: item.url,
+                                      type: 'game_highlight',
                                       author: item.creator
                                     });
                                     await deleteDoc(doc(db, 'applications_panel', item.id));
-                                    showStatus('Vídeo de destaque aprovado e publicado com sucesso! 🎉');
+                                    showStatus('Vídeo aprovado no Painel de Criadores! 🌟');
                                     playSuccessSound();
                                     fetchAllApplications();
                                   } catch (err: any) {
                                     alert('Erro ao aprovar: ' + err.message);
                                   }
                                 }}
-                                className="px-3 py-1.5 bg-emerald-550/20 hover:bg-emerald-550/30 text-emerald-400 rounded-lg text-xs font-black border border-emerald-500/30 flex items-center gap-1 cursor-pointer"
+                                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 rounded-lg text-xs font-black border border-amber-500/30 flex items-center gap-1 cursor-pointer"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
-                                <span>Aprovar no Painel</span>
+                                <span>Aprovar no PAINEL 🌟</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  playTapSound();
+                                  try {
+                                    onAddFeaturedVideo({
+                                      title: item.description || `Vídeo de ${item.creator}! 🎬`,
+                                      youtubeUrl: item.url,
+                                      type: 'panel_video',
+                                      author: item.creator
+                                    });
+                                    await deleteDoc(doc(db, 'applications_panel', item.id));
+                                    showStatus('Vídeo aprovado na Comunidade! 👥');
+                                    playSuccessSound();
+                                    fetchAllApplications();
+                                  } catch (err: any) {
+                                    alert('Erro ao aprovar: ' + err.message);
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/35 text-indigo-300 rounded-lg text-xs font-black border border-indigo-550/30 flex items-center gap-1 cursor-pointer"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                <span>Aprovar na COMUNIDADE 👥</span>
                               </button>
                               <button
                                 type="button"

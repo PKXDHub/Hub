@@ -1,0 +1,18 @@
+{
+  "name": "PKXD Hub",
+  "short_name": "PKXD Hub",
+  "description": "Central PK XD - Spoilers, Códigos, Novidades e Comunidade!",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
