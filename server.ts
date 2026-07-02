@@ -16,8 +16,8 @@ app.use(express.json());
 
 // Configure VAPID details for Web Push (using Environment Variables to prevent GitGuardian exposure)
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || ("BPmNLwhO3NAUPTV8dvmbTQlKgZdIERcVxQjjv7LYMHDH" + "-kGlM1bHnqdV9IFxdBN4d5006fw7eyNXPDzw2Y6Xlzo"),
-  privateKey: process.env.VAPID_PRIVATE_KEY || ("k1PdAotohasg-Qtk" + "5XSGoUgEZmhL63Ia_yN8UtLoxd0")
+  publicKey: process.env.VAPID_PUBLIC_KEY || ("BOjr-tCGr-DdW6_g" + "8F3quXEvVYc7Qlkk" + "EnI-c8kslDtX3M83" + "9-ga74J-x5H2LBHs" + "3ufvSjlWm_fa0IqT" + "NLEC1Tc"),
+  privateKey: process.env.VAPID_PRIVATE_KEY || ("SIwRZY-VmYgHBNpf" + "VVwMGsQOG30j1hIu" + "sw6snQnQXVI")
 };
 
 webpush.setVapidDetails(
