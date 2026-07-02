@@ -109,6 +109,27 @@ app.post("/api/push-subscribe", async (req, res) => {
   }
 });
 
+// Robust Manual Push notification endpoint to ensure delivery immediately on demand
+app.post("/api/send-push", async (req, res) => {
+  const { title, body, admin_secret, url } = req.body;
+  if (admin_secret !== "pkxd2026_super_secret_admin_key") {
+    res.status(401).json({ error: "Acesso administrativo negado." });
+    return;
+  }
+  if (!title || !body) {
+    res.status(400).json({ error: "Título e corpo são obrigatórios." });
+    return;
+  }
+  try {
+    console.log(`[Web Push API] Enviando notificação manual direta: "${title}"`);
+    await sendPushNotificationToAll(title, body, url || "/");
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error("[Web Push API] Erro ao disparar notificação manual direta:", err);
+    res.status(500).json({ error: err.message || "Erro interno ao disparar push" });
+  }
+});
+
 // Lazy-initialize Gemini SDK to be resilient if key is missing on startup
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {
