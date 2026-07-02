@@ -61,8 +61,8 @@ var app = (0, import_express.default)();
 var PORT = 3e3;
 app.use(import_express.default.json());
 var vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || "BPmNLwhO3NAUPTV8dvmbTQlKgZdIERcVxQjjv7LYMHDH-kGlM1bHnqdV9IFxdBN4d5006fw7eyNXPDzw2Y6Xlzo",
-  privateKey: process.env.VAPID_PRIVATE_KEY || "k1PdAotohasg-Qtk5XSGoUgEZmhL63Ia_yN8UtLoxd0"
+  publicKey: process.env.VAPID_PUBLIC_KEY || "BOjr-tCGr-DdW6_g8F3quXEvVYc7QlkkEnI-c8kslDtX3M839-ga74J-x5H2LBHs3ufvSjlWm_fa0IqTNLEC1Tc",
+  privateKey: process.env.VAPID_PRIVATE_KEY || "SIwRZY-VmYgHBNpfVVwMGsQOG30j1hIusw6snQnQXVI"
 };
 import_web_push.default.setVapidDetails(
   "mailto:kawanyuri35@gmail.com",
