@@ -137,6 +137,25 @@ app.post("/api/push-subscribe", async (req, res) => {
     res.status(500).json({ error: err.message || "Erro interno do servidor" });
   }
 });
+app.post("/api/send-push", async (req, res) => {
+  const { title, body, admin_secret, url } = req.body;
+  if (admin_secret !== "pkxd2026_super_secret_admin_key") {
+    res.status(401).json({ error: "Acesso administrativo negado." });
+    return;
+  }
+  if (!title || !body) {
+    res.status(400).json({ error: "T\xEDtulo e corpo s\xE3o obrigat\xF3rios." });
+    return;
+  }
+  try {
+    console.log(`[Web Push API] Enviando notifica\xE7\xE3o manual direta: "${title}"`);
+    await sendPushNotificationToAll(title, body, url || "/");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web Push API] Erro ao disparar notifica\xE7\xE3o manual direta:", err);
+    res.status(500).json({ error: err.message || "Erro interno ao disparar push" });
+  }
+});
 var aiClient = null;
 function getAI() {
   if (!aiClient) {
