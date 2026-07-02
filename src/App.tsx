@@ -283,6 +283,19 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Register Service Worker for Web Push on mount
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          console.log('PKXD Hub Service Worker registered successfully:', reg);
+        })
+        .catch((err) => {
+          console.error('PKXD Hub Service Worker registration failed:', err);
+        });
+    }
+  }, []);
+
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
 
@@ -393,11 +406,14 @@ export default function App() {
 
       console.log('PKXD Hub subscription generated:', subscription);
 
+      // Secure serialization using .toJSON() to prevent empty object bugs in some browsers
+      const serializedSubscription = subscription.toJSON();
+
       // Send subscription object to the server
       await fetch('/api/push-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscription)
+        body: JSON.stringify(serializedSubscription)
       });
     } catch (err) {
       console.error('Falha ao registrar push no servidor:', err);

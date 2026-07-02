@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import webpush from "web-push";
+import crypto from "crypto";
 import { adminDb } from "./src/lib/firebase-admin.ts";
 
 dotenv.config();
@@ -91,7 +92,9 @@ app.post("/api/push-subscribe", async (req, res) => {
   }
 
   try {
-    const subscriptionId = Buffer.from(subscription.endpoint).toString('base64').replace(/=/g, '').substring(0, 50);
+    const subscriptionId = crypto.createHash("sha256").update(subscription.endpoint).digest("hex");
+    console.log(`[Web Push] Nova inscrição registrada! ID: ${subscriptionId}, Endpoint: ${subscription.endpoint}`);
+    
     const subRef = adminDb.collection("push_subscriptions").doc(subscriptionId);
     
     await subRef.set({
@@ -99,7 +102,7 @@ app.post("/api/push-subscribe", async (req, res) => {
       createdAt: Date.now()
     });
 
-    res.json({ success: true });
+    res.json({ success: true, id: subscriptionId });
   } catch (err: any) {
     console.error("Erro ao salvar inscrição Push:", err);
     res.status(500).json({ error: err.message || "Erro interno do servidor" });
