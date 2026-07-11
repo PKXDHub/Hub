@@ -368,7 +368,7 @@ export default function AdminPanel({
 
   useEffect(() => {
     if (activeTab === 'promocodes' && isOpen) {
-      const codesRef = collection(db, 'generated_promo_codes');
+      const codesRef = collection(db, 'promo_codes');
       const q = query(codesRef, orderBy('createdAt', 'desc'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const list: GeneratedPromoCode[] = [];
@@ -1216,7 +1216,7 @@ export default function AdminPanel({
     setCodeSubmitLoading(true);
     playTapSound();
     try {
-      const codeRef = doc(db, 'generated_promo_codes', cleanCode);
+      const codeRef = doc(db, 'promo_codes', cleanCode);
       await setDoc(codeRef, {
         code: cleanCode,
         gems: Number(newCodeGems),
@@ -1580,7 +1580,7 @@ export default function AdminPanel({
                 activeTab === 'promocodes' ? 'bg-yellow-400 text-black font-black' : 'bg-zinc-900 text-gray-300'
               }`}
             >
-              🎟️ Criar Códigos
+              🎟️ Promo Code Generator
               {generatedCodes.length > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-amber-550 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center justify-center">
                   {generatedCodes.length}
@@ -3487,16 +3487,16 @@ export default function AdminPanel({
             </div>
           )}
 
-          {/* TAB: Criar/Gerenciar Códigos de Resgate */}
+          {/* TAB: Criar/Gerenciar Códigos de Resgate (Promo Code Generator) */}
           {activeTab === 'promocodes' && (
             <div className="space-y-6 text-left">
               <div className="border-b border-white/5 pb-3">
                 <h4 className="font-sans font-black text-sm uppercase text-amber-400 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                  <span>🎟️ GERENCIAR E CRIAR CÓDIGOS DE RESGATE</span>
+                  <span>🎟️ Promo Code Generator</span>
                 </h4>
                 <p className="text-[11px] text-gray-400 font-sans leading-relaxed">
-                  Gere novos cupons de joias e moedas com limite de resgates para distribuir ao fã-clube do PK XD! Os jogadores poderão resgatá-los no painel de cupons.
+                  Gere novos cupons de joias e moedas com limite máximo de uso para distribuir ao fã-clube do PK XD! Os jogadores poderão resgatá-los no painel de cupons.
                 </p>
               </div>
 
@@ -3518,40 +3518,40 @@ export default function AdminPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Gemas de Recompensa *</label>
-                    <input 
-                      type="number" 
-                      value={newCodeGems} 
-                      onChange={(e) => setNewCodeGems(Number(e.target.value))} 
-                      placeholder="Ex: 50"
-                      min={0}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Moedas de Recompensa *</label>
-                    <input 
-                      type="number" 
-                      value={newCodeCoins} 
-                      onChange={(e) => setNewCodeCoins(Number(e.target.value))} 
-                      placeholder="Ex: 2000"
-                      min={0}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Limite de Resgates *</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Limite de Uso (Max) *</label>
                     <input 
                       type="number" 
                       value={newCodeMaxRedeems} 
                       onChange={(e) => setNewCodeMaxRedeems(Number(e.target.value))} 
                       placeholder="Ex: 50"
                       min={1}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400 font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Joias de Recompensa</label>
+                    <input 
+                      type="number" 
+                      value={newCodeGems} 
+                      onChange={(e) => setNewCodeGems(Number(e.target.value))} 
+                      placeholder="Ex: 50"
+                      min={0}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400 font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Moedas de Recompensa</label>
+                    <input 
+                      type="number" 
+                      value={newCodeCoins} 
+                      onChange={(e) => setNewCodeCoins(Number(e.target.value))} 
+                      placeholder="Ex: 2000"
+                      min={0}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-yellow-400 font-mono"
                       required
                     />
                   </div>
@@ -3560,7 +3560,7 @@ export default function AdminPanel({
                 <button 
                   type="submit" 
                   disabled={codeSubmitLoading}
-                  className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 disabled:bg-zinc-700 text-black font-sans font-black uppercase text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 disabled:bg-zinc-700 text-black font-sans font-black uppercase text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all duration-200 active:scale-95 shadow-md"
                 >
                   {codeSubmitLoading ? (
                     <>
@@ -3570,67 +3570,86 @@ export default function AdminPanel({
                   ) : (
                     <>
                       <PlusCircle className="w-3.5 h-3.5" />
-                      <span>Gerar Código de Resgate ✨</span>
+                      <span>Salvar na Coleção 'promo_codes' ✨</span>
                     </>
                   )}
                 </button>
               </form>
 
-              {/* Codes List */}
+              {/* Codes Table List */}
               <div className="space-y-3">
-                <h5 className="text-xs font-black uppercase text-gray-300">Códigos Gerados Ativos</h5>
+                <h5 className="text-xs font-black uppercase text-gray-300">Códigos Ativos Atuais</h5>
                 {generatedCodes.length === 0 ? (
                   <div className="text-center py-8 border border-dashed border-white/5 bg-black/10 rounded-2xl text-gray-500 text-xs font-bold uppercase">
-                    Nenhum código gerado ainda. Crie um acima!
+                    Nenhum código ativo no momento. Crie um acima!
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {generatedCodes.map((code) => {
-                      const isExpired = code.currentRedeems >= code.maxRedeems;
-                      return (
-                        <div key={code.code} className="bg-black/40 border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4">
-                          <div className="space-y-1 text-left">
-                            <span className="font-mono font-black text-sm text-yellow-400 tracking-wider">
-                              {code.code}
-                            </span>
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="text-purple-400 font-bold font-mono">💎 {code.gems}</span>
-                              <span className="text-amber-500 font-bold font-mono">🪙 {code.coins}</span>
-                            </div>
-                            <div className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <span>Resgates:</span>
-                              <span className={`font-mono font-extrabold ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>
+                  <div className="overflow-x-auto border border-zinc-800 rounded-xl bg-zinc-950/20">
+                    <table className="w-full text-left border-collapse font-sans">
+                      <thead>
+                        <tr className="border-b border-zinc-800 bg-zinc-900/40 text-[10px] text-gray-400 uppercase tracking-wider font-extrabold">
+                          <th className="p-3">Código</th>
+                          <th className="p-3">Recompensa</th>
+                          <th className="p-3">Usos Registrados</th>
+                          <th className="p-3">Usos Restantes</th>
+                          <th className="p-3 text-center">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatedCodes.map((code) => {
+                          const remaining = Math.max(0, code.maxRedeems - code.currentRedeems);
+                          const isExpired = remaining <= 0;
+                          return (
+                            <tr key={code.code} className="border-b border-zinc-850 hover:bg-white/5 transition-colors text-xs">
+                              <td className="p-3 font-mono font-black text-yellow-400 tracking-wider">
+                                {code.code}
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-2">
+                                  {code.gems > 0 && <span className="text-purple-400 font-extrabold font-mono">💎 {code.gems}</span>}
+                                  {code.coins > 0 && <span className="text-amber-500 font-extrabold font-mono">🪙 {code.coins}</span>}
+                                  {code.gems === 0 && code.coins === 0 && <span className="text-gray-500">-</span>}
+                                </div>
+                              </td>
+                              <td className="p-3 font-mono text-gray-300 font-bold">
                                 {code.currentRedeems} / {code.maxRedeems}
-                              </span>
-                              {isExpired && (
-                                <span className="bg-red-500/25 text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded uppercase animate-pulse">
-                                  ESGOTADO
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                playTapSound();
-                                if (confirm(`Deseja revogar e excluir permanentemente o cupom ${code.code}?`)) {
-                                  await deleteDoc(doc(db, 'generated_promo_codes', code.code));
-                                  showStatus(`Cupom ${code.code} excluído! 🗑️`);
-                                }
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }}
-                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 cursor-pointer"
-                            title="Revogar Código"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                              </td>
+                              <td className="p-3">
+                                {isExpired ? (
+                                  <span className="bg-red-500/20 text-red-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                                    ESGOTADO
+                                  </span>
+                                ) : (
+                                  <span className="font-mono font-black text-emerald-400">
+                                    {remaining} restante{remaining !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      playTapSound();
+                                      if (confirm(`Deseja deletar e excluir permanentemente o cupom ${code.code}?`)) {
+                                        await deleteDoc(doc(db, 'promo_codes', code.code));
+                                        showStatus(`Cupom ${code.code} deletado! 🗑/` + `️`);
+                                      }
+                                    } catch (err: any) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 cursor-pointer inline-flex items-center justify-center transition-all active:scale-90"
+                                  title="Deletar Código"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>

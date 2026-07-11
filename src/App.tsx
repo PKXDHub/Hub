@@ -2003,6 +2003,7 @@ export default function App() {
           triggerAudio={triggerAudio}
           showAdminPanel={showAdminPanel}
           setShowAdminPanel={setShowAdminPanel}
+          isAdmin={isAdmin}
         />
         
         {/* Admin Panel / Google Login Area */}

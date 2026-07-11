@@ -19,6 +19,7 @@ interface AppleProfileHeaderProps {
   triggerAudio: (type: 'tap' | 'success' | 'levelUp') => void;
   showAdminPanel: boolean;
   setShowAdminPanel: (show: boolean) => void;
+  isAdmin: boolean;
 }
 
 interface CustomAvatar {
@@ -38,12 +39,11 @@ export default function AppleProfileHeader({
   soundEnabled,
   triggerAudio,
   showAdminPanel,
-  setShowAdminPanel
+  setShowAdminPanel,
+  isAdmin
 }: AppleProfileHeaderProps) {
-  // Theme state: light or dark (default to dark for the pristine Apple purple vibe, switchable)
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('pkxd_theme_mode') as 'light' | 'dark') || 'dark';
-  });
+  // Theme state: fixed to dark for the pristine Apple purple vibe, non-switchable
+  const themeMode = 'dark';
 
   // Nickname, Bio and Instagram states
   const [nickname, setNickname] = useState(() => {
@@ -112,20 +112,15 @@ export default function AppleProfileHeader({
     { id: 'kitty', emoji: '🐱', label: 'Kitty (Fofa)', color: 'bg-amber-100 border-amber-300' }
   ];
 
-  // Apply theme class to root
+  // Apply theme class to root (always dark mode)
   useEffect(() => {
     const root = document.getElementById('pkxd-app-root');
     if (root) {
-      if (themeMode === 'dark') {
-        root.classList.add('theme-dark');
-        root.classList.remove('theme-light', 'theme-neutral');
-      } else {
-        root.classList.add('theme-light');
-        root.classList.remove('theme-dark', 'theme-neutral');
-      }
+      root.classList.add('theme-dark');
+      root.classList.remove('theme-light', 'theme-neutral');
     }
-    localStorage.setItem('pkxd_theme_mode', themeMode);
-  }, [themeMode]);
+    localStorage.setItem('pkxd_theme_mode', 'dark');
+  }, []);
 
   // Fetch Firestore Custom Avatars
   useEffect(() => {
@@ -265,6 +260,10 @@ export default function AppleProfileHeader({
   // Create Avatar and upload to Firestore ("aparece pra todos como disponível para compra")
   const handleCreateAvatar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      showAlert("❌ Apenas administradores podem criar avatares para vender!");
+      return;
+    }
     if (!newAvatarName.trim()) {
       showAlert("⚠️ Dê um nome para o seu avatar!");
       return;
@@ -395,76 +394,59 @@ export default function AppleProfileHeader({
       {/* ==========================================================================
          1. APPLE PREMIUM GLASS ACCESSORY BAR & THEME CONTROL
          ========================================================================== */}
-      <div className="bg-white/60 border border-white/40 rounded-2xl p-3 px-4 flex items-center justify-between shadow-sm backdrop-blur-md">
+      <div className="bg-neutral-950/60 border border-purple-500/20 rounded-2xl p-3 px-4 flex items-center justify-between shadow-xl backdrop-blur-md">
         
-        {/* Left: Quick Access & Theme Mode Control */}
+        {/* Left: Quick Access & Profile Settings Control */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Light/Dark Mode Switcher */}
+          {/* Profile Settings Toggle (Settings icon) */}
           <button
             onClick={() => {
               triggerAudio('tap');
-              setThemeMode(themeMode === 'light' ? 'dark' : 'light');
+              setIsEditing(!isEditing);
+              // Initialize form fields with current values
+              setEditName(nickname);
+              setEditBio(bio);
+              setEditInsta(instagram);
+              setEditCustomPic(customProfileImage);
             }}
-            className="p-2 bg-neutral-100/50 hover:bg-neutral-200/50 dark:bg-neutral-800/40 dark:hover:bg-neutral-700/40 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-            title={themeMode === 'light' ? 'Mudar para Modo Escuro' : 'Mudar para Modo Claro'}
+            className={`p-2 rounded-xl transition-all hover:bg-purple-900/40 text-purple-300 active:scale-95 cursor-pointer flex items-center gap-1.5 ${isEditing ? 'bg-purple-950/70 border border-purple-500/40 text-purple-200' : 'bg-neutral-900/50 border border-neutral-800/40'}`}
+            title="Ajustar Perfil"
           >
-            {themeMode === 'light' ? (
-              <>
-                <Moon className="w-4 h-4 text-purple-600" />
-                <span className="text-[10px] font-bold text-neutral-600 hidden sm:inline">Modo Escuro</span>
-              </>
-            ) : (
-              <>
-                <Sun className="w-4 h-4 text-amber-500 animate-spin-slow" />
-                <span className="text-[10px] font-bold text-amber-500 hidden sm:inline">Modo Claro</span>
-              </>
-            )}
-          </button>
-
-          {/* Admin Panel toggle */}
-          <button
-            onClick={() => {
-              triggerAudio('tap');
-              setShowAdminPanel(!showAdminPanel);
-            }}
-            className={`p-2 rounded-xl transition-all hover:bg-neutral-200/50 dark:hover:bg-neutral-700/40 text-neutral-500 active:scale-95 cursor-pointer flex items-center gap-1.5 ${showAdminPanel ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-600' : ''}`}
-            title="Ajustes de Admin"
-          >
-            <Settings className={`w-4 h-4 ${showAdminPanel ? 'animate-spin' : ''}`} />
-            <span className="text-[10px] font-bold hidden md:inline">Admin</span>
+            <Settings className={`w-4 h-4 ${isEditing ? 'animate-spin' : ''}`} />
+            <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Ajustes do Perfil</span>
           </button>
 
           {/* Claim Reward Button */}
           <button
             onClick={handleClaimFreeReward}
-            className="p-2 bg-pink-50 hover:bg-pink-100 dark:bg-pink-950/30 dark:hover:bg-pink-950/60 rounded-xl transition-all active:scale-95 cursor-pointer text-pink-600 flex items-center gap-1.5 font-bold"
+            className="p-2 bg-pink-950/30 hover:bg-pink-950/60 border border-pink-500/20 rounded-xl transition-all active:scale-95 cursor-pointer text-pink-400 flex items-center gap-1.5 font-bold"
             title="Ganhar Gemas/Moedas Grátis"
           >
-            <Gift className="w-4 h-4 text-pink-500 animate-bounce" />
+            <Gift className="w-4 h-4 text-pink-400 animate-bounce" />
             <span className="text-[10px] uppercase tracking-wider hidden sm:inline">Grátis 🎁</span>
           </button>
         </div>
 
         {/* Center: System Status */}
-        <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
+        <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>PKXD Central • Glass UI v2.0</span>
+          <span>PKXD Central • Glass UI v2.5</span>
         </div>
 
         {/* Right: Currency Indicator Box */}
         <div className="flex items-center gap-2.5">
           {/* Coins Display */}
-          <div className="bg-amber-50/70 border border-amber-200/50 rounded-full py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
+          <div className="bg-amber-950/40 border border-amber-500/35 rounded-full py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
             <span className="text-sm">🪙</span>
-            <span className="text-xs sm:text-sm font-extrabold text-amber-700 font-mono tracking-tight leading-none">
+            <span className="text-xs sm:text-sm font-extrabold text-amber-300 font-mono tracking-tight leading-none">
               {coins.toLocaleString('pt-BR')}
             </span>
           </div>
 
           {/* Gems Display */}
-          <div className="bg-purple-50/70 border border-purple-200/50 rounded-full py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
+          <div className="bg-purple-950/40 border border-purple-500/35 rounded-full py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
             <span className="text-sm">💎</span>
-            <span className="text-xs sm:text-sm font-extrabold text-purple-700 font-mono tracking-tight leading-none">
+            <span className="text-xs sm:text-sm font-extrabold text-purple-300 font-mono tracking-tight leading-none">
               {gems.toLocaleString('pt-BR')}
             </span>
             <button
@@ -484,7 +466,7 @@ export default function AppleProfileHeader({
       {/* ==========================================================================
          2. CORE PROFILE PANEL (GLASSMORPHIC ARTISTRY)
          ========================================================================== */}
-      <div className="bg-white/65 dark:bg-neutral-900/50 border border-white/50 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden backdrop-blur-xl">
+      <div className="bg-neutral-950/70 border border-purple-500/20 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
         {/* Soft background aesthetic glow spots */}
         <div className="absolute top-0 right-0 w-44 h-44 bg-purple-400/10 dark:bg-purple-600/10 blur-3xl rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-10 w-32 h-32 bg-pink-400/5 dark:bg-pink-600/5 blur-2xl rounded-full pointer-events-none" />
@@ -760,20 +742,22 @@ export default function AppleProfileHeader({
                     <Store className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <div>
                       <h3 className="text-sm font-black text-neutral-900 dark:text-white uppercase">Loja de Avatares da Comunidade</h3>
-                      <p className="text-[10px] text-neutral-400">Todos podem criar avatares e publicar para todos comprarem! ✨</p>
+                      <p className="text-[10px] text-neutral-400">Apenas administradores podem criar avatares para vender. Escolha e equipe os seus! ✨</p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      triggerAudio('tap');
-                      setIsCreateAvatarOpen(!isCreateAvatarOpen);
-                    }}
-                    className="flex items-center gap-1 py-1 px-3 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-black uppercase rounded-xl cursor-pointer"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Criar Novo</span>
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        triggerAudio('tap');
+                        setIsCreateAvatarOpen(!isCreateAvatarOpen);
+                      }}
+                      className="flex items-center gap-1 py-1.5 px-3.5 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-black uppercase rounded-xl cursor-pointer shadow-md transition-all active:scale-95 animate-pulse"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Criar Novo (Admin)</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Form to CREATE new Avatar */}

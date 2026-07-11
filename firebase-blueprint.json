@@ -224,6 +224,10 @@
     }
   },
   "firestore": {
+    "/promo_codes/{codeId}": {
+      "schema": "GeneratedPromoCode",
+      "description": "Collection of generated promo codes with max usage limit"
+    },
     "/generated_promo_codes/{codeId}": {
       "schema": "GeneratedPromoCode",
       "description": "Collection of generated promo codes with redeem limits"

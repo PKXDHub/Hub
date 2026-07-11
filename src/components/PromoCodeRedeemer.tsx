@@ -32,9 +32,17 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
     setRedeemResult(null);
 
     try {
-      // 1. Check in Firestore
-      const docRef = doc(db, 'generated_promo_codes', cleanCode);
-      const docSnap = await getDoc(docRef);
+      // 1. Check in Firestore 'promo_codes' first
+      let docRef = doc(db, 'promo_codes', cleanCode);
+      let docSnap = await getDoc(docRef);
+
+      // Fallback to 'generated_promo_codes' if not in 'promo_codes'
+      let usedCollection = 'promo_codes';
+      if (!docSnap.exists()) {
+        docRef = doc(db, 'generated_promo_codes', cleanCode);
+        docSnap = await getDoc(docRef);
+        usedCollection = 'generated_promo_codes';
+      }
 
       if (docSnap.exists()) {
         const data = docSnap.data();
