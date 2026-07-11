@@ -394,7 +394,7 @@ export default function SocialSection({
                     key={post.id}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-5 text-left space-y-4 hover:shadow-md transition-all relative overflow-hidden"
+                    className="bg-neutral-950/60 border border-purple-500/20 rounded-2xl p-4 sm:p-5 text-left space-y-4 hover:border-purple-500/40 hover:shadow-2xl transition-all relative overflow-hidden"
                   >
                     {/* Author block - Instagram Style */}
                     <div className="flex items-center justify-between gap-4">
@@ -407,10 +407,10 @@ export default function SocialSection({
                           }}
                           className="w-12 h-12 rounded-full p-[2.5px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 hover:scale-105 active:scale-95 transition-all cursor-pointer relative"
                         >
-                          <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-xl shadow-inner">
+                          <div className="w-full h-full bg-neutral-900 rounded-full flex items-center justify-center text-xl text-white shadow-inner">
                             <span className="select-none">{getAvatarFallback(post.authorName)}</span>
                           </div>
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" title="Online" />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-900 rounded-full" title="Online" />
                         </button>
 
                         <div className="space-y-0.5">
@@ -420,7 +420,7 @@ export default function SocialSection({
                                 triggerAudio('tap');
                                 setSelectedProfileId(post.authorId || null);
                               }}
-                              className="font-sans text-sm font-bold text-neutral-900 hover:text-purple-600 hover:underline text-left cursor-pointer transition-colors block"
+                              className="font-sans text-sm font-bold text-white hover:text-purple-300 hover:underline text-left cursor-pointer transition-colors block"
                             >
                               {post.authorName}
                             </button>
@@ -442,7 +442,7 @@ export default function SocialSection({
                       <div className="flex items-center gap-2">
                         {/* Admin Badge */}
                         {(post.authorName.toLowerCase().includes('admin') || post.authorId === 'admin_fallback' || post.authorId === 'p6u6hBInG8fS6hPzC78p4KXD') ? (
-                          <span className="text-[8px] font-black bg-neutral-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          <span className="text-[8px] font-black bg-purple-900 text-purple-200 px-2 py-0.5 rounded-md uppercase tracking-wider">
                             CREATOR
                           </span>
                         ) : null}
@@ -452,7 +452,7 @@ export default function SocialSection({
                           <button
                             onClick={() => handleDeletePost(post.id)}
                             title="Excluir Post"
-                            className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-neutral-100 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 text-neutral-400 hover:text-red-400 hover:bg-purple-950/40 rounded-lg transition-all cursor-pointer flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -461,22 +461,22 @@ export default function SocialSection({
                     </div>
 
                     {/* Content text - clean, high legibility */}
-                    <p className="font-sans text-sm text-neutral-800 leading-relaxed whitespace-pre-line pl-1 font-normal">
+                    <p className="font-sans text-sm text-neutral-250 leading-relaxed whitespace-pre-line pl-1 font-normal">
                       {post.content}
                     </p>
 
                     {/* Actions and triggers - Elegant Instagram Action Bar */}
-                    <div className="flex items-center gap-6 pt-3 border-t border-neutral-100 text-neutral-500 text-xs font-semibold">
+                    <div className="flex items-center gap-6 pt-3 border-t border-neutral-800 text-neutral-400 text-xs font-semibold">
                       {/* Like button */}
                       <button
                         onClick={() => handleLikePost(post)}
                         className={`flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                           isLikedByMe 
-                            ? 'text-rose-500' 
-                            : 'text-neutral-500 hover:text-rose-500'
+                            ? 'text-rose-400' 
+                            : 'text-neutral-400 hover:text-rose-400'
                         }`}
                       >
-                        <Heart className={`w-5 h-5 transition-transform ${isLikedByMe ? 'fill-rose-500 text-rose-500 scale-110' : ''}`} />
+                        <Heart className={`w-5 h-5 transition-transform ${isLikedByMe ? 'fill-rose-400 text-rose-400 scale-110' : ''}`} />
                         <span>{post.likes === 1 ? "1 curtida" : `${post.likes} curtidas`}</span>
                       </button>
 
@@ -488,8 +488,8 @@ export default function SocialSection({
                         }}
                         className={`flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                           activeCommentsPostId === post.id
-                            ? 'text-purple-600'
-                            : 'text-neutral-500 hover:text-purple-600'
+                            ? 'text-purple-300'
+                            : 'text-neutral-400 hover:text-purple-300'
                         }`}
                       >
                         <MessageSquare className="w-5 h-5" />
@@ -504,7 +504,7 @@ export default function SocialSection({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden pt-4 mt-2 border-t border-neutral-100"
+                          className="overflow-hidden pt-4 mt-2 border-t border-neutral-800"
                         >
                           <CommentsSection
                             targetId={post.id}

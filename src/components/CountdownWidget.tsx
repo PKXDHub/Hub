@@ -366,21 +366,21 @@ export default function CountdownWidget({
   return (
     <div 
       id="countdown-container"
-      className="relative overflow-hidden bg-white border border-neutral-200 shadow-sm p-6 sm:p-8 rounded-3xl text-neutral-800"
+      className="relative overflow-hidden bg-neutral-950/60 border border-purple-500/20 shadow-2xl p-6 sm:p-8 rounded-3xl text-white backdrop-blur-md"
     >
       <div className="relative z-10 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100">
-              <Flame className="w-6 h-6 text-purple-600 fill-purple-600 animate-pulse" />
+            <div className="p-3 bg-purple-950/50 rounded-2xl border border-purple-500/30">
+              <Flame className="w-6 h-6 text-purple-400 fill-purple-400 animate-pulse" />
             </div>
             <div>
-              <h3 className="font-sans font-black text-xl sm:text-2xl tracking-tight text-neutral-900 uppercase">
+              <h3 className="font-sans font-black text-xl sm:text-2xl tracking-tight text-white uppercase">
                 Próximos Spoilers PK XD
               </h3>
-              <p className="font-sans text-xs text-neutral-500">
-                Toda segunda-feira às <span className="text-purple-600 font-extrabold">17:30</span> ao vivo!
+              <p className="font-sans text-xs text-neutral-400">
+                Toda segunda-feira às <span className="text-purple-400 font-extrabold">17:30</span> ao vivo!
               </p>
             </div>
           </div>
@@ -390,7 +390,7 @@ export default function CountdownWidget({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-600"></span>
             </span>
-            <span className="font-sans text-[10px] font-black tracking-wider text-purple-700 uppercase bg-purple-50 px-3 py-1 rounded-full border border-purple-150">
+            <span className="font-sans text-[10px] font-black tracking-wider text-purple-300 uppercase bg-purple-950/60 px-3 py-1 rounded-full border border-purple-500/20">
               {timeLeft.isExpired ? 'Liberado!' : 'Agendado'}
             </span>
           </div>
@@ -400,15 +400,15 @@ export default function CountdownWidget({
         {timeLeft.isExpired ? (
           <div 
             id="spoiler-revealed-state"
-            className="flex flex-col items-start justify-start p-5 sm:p-6 bg-neutral-50/55 border border-neutral-200 rounded-2xl text-left relative overflow-hidden transition-all duration-200 w-full space-y-5"
+            className="flex flex-col items-start justify-start p-5 sm:p-6 bg-neutral-900/60 border border-purple-500/20 rounded-2xl text-left relative overflow-hidden transition-all duration-200 w-full space-y-5"
           >
             <div className="relative z-10 w-full space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-neutral-100 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-neutral-800 pb-3">
                 <div>
-                  <span className="font-sans text-[9px] font-black tracking-wider text-purple-650 bg-purple-50 px-2.5 py-0.5 rounded-md uppercase border border-purple-100">
+                  <span className="font-sans text-[9px] font-black tracking-wider text-purple-300 bg-purple-950/50 px-2.5 py-0.5 rounded-md uppercase border border-purple-500/20">
                     🔥 SPOILER CONFIRMADO & REVELADO
                   </span>
-                  <h4 className="font-sans font-black text-xl sm:text-2xl text-neutral-950 tracking-tight uppercase leading-tight mt-1.5">
+                  <h4 className="font-sans font-black text-xl sm:text-2xl text-white tracking-tight uppercase leading-tight mt-1.5">
                     {spoilerTitle || 'Nova Atualização Incrível!'}
                   </h4>
                 </div>
@@ -421,7 +421,7 @@ export default function CountdownWidget({
                       playTapSound();
                       onOpenFullscreen(spoilerTitle || 'Nova Atualização Incrível!', spoilerDesc, activeImageUrl);
                     }}
-                    className="flex-shrink-0 px-4 py-2 bg-neutral-900 hover:bg-neutral-850 text-white font-sans font-black uppercase text-[10px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm hover:scale-102 active:scale-98 transition-all border-0"
+                    className="flex-shrink-0 px-4 py-2 bg-purple-650 hover:bg-purple-750 text-white font-sans font-black uppercase text-[10px] tracking-wider rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm hover:scale-102 active:scale-98 transition-all border-0"
                   >
                     <Eye className="w-3.5 h-3.5 text-white" /> Foco Imersivo
                   </button>
@@ -430,7 +430,7 @@ export default function CountdownWidget({
 
               {/* CRISP AND CLEAR IMAGE DIRECT ENTRY */}
               {activeImageUrl ? (
-                <div className="relative w-full overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-inner flex items-center justify-center p-1.5">
+                <div className="relative w-full overflow-hidden rounded-xl border border-purple-500/20 bg-neutral-950 shadow-inner flex items-center justify-center p-1.5">
                   <img 
                     src={activeImageUrl} 
                     alt="Imagem Revelada do Spoiler" 
@@ -441,11 +441,11 @@ export default function CountdownWidget({
               ) : null}
 
               {/* DIRECT TEXT PARSING & BEAUTIFUL DETAILS */}
-              <div className="bg-white p-4 sm:p-5 rounded-xl border border-neutral-200/80 shadow-sm space-y-2.5">
-                <h5 className="font-sans font-black text-xs text-neutral-800 uppercase tracking-wider border-b border-neutral-100 pb-1.5">
+              <div className="bg-neutral-950/60 p-4 sm:p-5 rounded-xl border border-purple-500/20 shadow-md space-y-2.5">
+                <h5 className="font-sans font-black text-xs text-purple-300 uppercase tracking-wider border-b border-neutral-800 pb-1.5">
                   📋 Especificações da Atualização:
                 </h5>
-                <div className="max-h-[250px] overflow-y-auto pr-1 text-neutral-700">
+                <div className="max-h-[250px] overflow-y-auto pr-1 text-neutral-200">
                   {parseAndRenderContent(spoilerDesc)}
                 </div>
               </div>
@@ -455,15 +455,15 @@ export default function CountdownWidget({
           <div className="space-y-5">
             {/* Show Delayed banner warning if delay is active */}
             {isDelayed && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-left">
-                <span className="p-1.5 bg-amber-150 text-amber-700 rounded-lg font-bold text-xs">
+              <div className="p-4 bg-amber-955/40 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-left">
+                <span className="p-1.5 bg-amber-950 text-amber-400 rounded-lg font-bold text-xs">
                   ⚠️
                 </span>
                 <div>
-                  <h4 className="font-sans font-black text-xs text-amber-800 uppercase tracking-wider">
+                  <h4 className="font-sans font-black text-xs text-amber-300 uppercase tracking-wider">
                     Spoiler Adiado / Atrasado
                   </h4>
-                  <p className="font-sans text-xs text-amber-700 mt-1">
+                  <p className="font-sans text-xs text-amber-200 mt-1">
                     {delayMessage || 'O spoiler desta segunda-feira foi adiado ou atrasará um pouquinho no envio. Fiquem calmos, já postaremos tudo!'}
                   </p>
                 </div>
@@ -481,12 +481,12 @@ export default function CountdownWidget({
                 <div 
                   key={idx}
                   onClick={pulseTap}
-                  className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-200/80 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-neutral-900/50 hover:bg-purple-950/40 border border-purple-500/10 shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <span className="font-mono font-black text-2xl sm:text-4xl text-neutral-900">
+                  <span className="font-mono font-black text-2xl sm:text-4xl text-white">
                     {String(column.value).padStart(2, '0')}
                   </span>
-                  <span className="font-sans font-extrabold text-[9px] sm:text-[10px] text-neutral-400 tracking-wider uppercase mt-1">
+                  <span className="font-sans font-extrabold text-[9px] sm:text-[10px] text-purple-300/85 tracking-wider uppercase mt-1">
                     {column.label}
                   </span>
                 </div>
@@ -495,11 +495,11 @@ export default function CountdownWidget({
 
             {/* Glowing progress slider bar */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-xs font-bold text-neutral-500 px-1 font-sans">
+              <div className="flex justify-between items-center text-xs font-bold text-neutral-400 px-1 font-sans">
                 <span>Carga de Energia do Spoiler</span>
-                <span className="text-purple-650 font-black">{Math.round(progressPercent)}% Pronto</span>
+                <span className="text-purple-400 font-black">{Math.round(progressPercent)}% Pronto</span>
               </div>
-              <div className="w-full h-3 bg-neutral-100 rounded-full overflow-hidden p-0.5 border border-neutral-200/60">
+              <div className="w-full h-3 bg-neutral-950 rounded-full overflow-hidden p-0.5 border border-purple-500/10">
                 <div 
                   className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-650 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercent}%` }}
@@ -508,11 +508,11 @@ export default function CountdownWidget({
             </div>
 
             {/* Prompt Card */}
-            <div className="flex items-start gap-3 bg-neutral-50/50 border border-neutral-200/70 p-4 rounded-2xl">
-              <HelpCircle className="w-5 h-5 text-neutral-500 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 bg-purple-950/30 border border-purple-500/15 p-4 rounded-2xl">
+              <HelpCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-sans font-bold text-sm text-neutral-800">O que acontece na contagem?</h4>
-                <p className="font-sans text-xs text-neutral-500 leading-relaxed mt-0.5">
+                <h4 className="font-sans font-bold text-sm text-purple-300">O que acontece na contagem?</h4>
+                <p className="font-sans text-xs text-neutral-300 leading-relaxed mt-0.5">
                   Toda segunda-feira às 17h30, o relógio zera e libera os exclusivos spoilers coletivos de PK XD. Fique ligado na página ou acesse nosso Canal no WhatsApp para receber em primeira mão!
                 </p>
               </div>
@@ -522,10 +522,10 @@ export default function CountdownWidget({
 
         {/* Alternative Extra Countdown Timer */}
         {extraTimeLeft && (
-          <div className="mt-6 pt-5 border-t border-neutral-100 space-y-3.5 text-left">
-            <div className="flex items-center gap-2 text-neutral-700">
-              <Flame className="w-4 h-4 text-purple-650 fill-purple-100" />
-              <h4 className="font-sans font-black text-xs uppercase tracking-wider text-neutral-800">
+          <div className="mt-6 pt-5 border-t border-neutral-850 space-y-3.5 text-left">
+            <div className="flex items-center gap-2 text-purple-300">
+              <Flame className="w-4 h-4 text-purple-400 fill-purple-950" />
+              <h4 className="font-sans font-black text-xs uppercase tracking-wider text-purple-250">
                 {extraCountdownTitle || 'Contagem Alternativa / Spoiler Extra!'}
               </h4>
             </div>
@@ -539,12 +539,12 @@ export default function CountdownWidget({
                 <div 
                   key={idx}
                   onClick={pulseTap}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-neutral-900/50 hover:bg-purple-950/40 border border-purple-500/10 shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <span className="font-mono font-black text-sm sm:text-lg text-neutral-800">
+                  <span className="font-mono font-black text-sm sm:text-lg text-white">
                     {String(column.value).padStart(2, '0')}
                   </span>
-                  <span className="font-sans font-extrabold text-[8px] sm:text-[9px] text-neutral-400 tracking-wider uppercase mt-0.5">
+                  <span className="font-sans font-extrabold text-[8px] sm:text-[9px] text-purple-300/80 tracking-wider uppercase mt-0.5">
                     {column.label}
                   </span>
                 </div>

@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings, ShoppingBag, Trophy, Sparkles, Plus, 
   Smile, Edit2, Sun, Moon, Camera, Upload, Store, 
-  Coins, Gift, PlusCircle, Check, CreditCard, Trash2, Heart
+  Coins, Gift, PlusCircle, Check, CreditCard, Trash2, Heart,
+  Users, UserPlus, UserCheck, Search, XCircle, Trash
 } from 'lucide-react';
 import { 
   collection, doc, setDoc, deleteDoc, onSnapshot, 
-  query, orderBy, limit 
+  query, orderBy, limit, getDocs, getDoc, where
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -88,6 +89,18 @@ export default function AppleProfileHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isCreateAvatarOpen, setIsCreateAvatarOpen] = useState(false);
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false);
+  
+  // Friends System States
+  const [friendships, setFriendships] = useState<any[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [friendSearchResults, setFriendSearchResults] = useState<any[]>([]);
+  const [searchingFriends, setSearchingFriends] = useState(false);
+  const [guestFriends, setGuestFriends] = useState<string[]>(() => {
+    const saved = localStorage.getItem('pkxd_guest_friends');
+    return saved ? JSON.parse(saved) : ['Pipoca', 'Nerd_Gamer', 'Spoiler_Master'];
+  });
   
   // Profile edit form fields
   const [editName, setEditName] = useState(nickname);
@@ -188,6 +201,171 @@ export default function AppleProfileHeader({
   const showAlert = (msg: string) => {
     setNotif(msg);
     setTimeout(() => setNotif(null), 4000);
+  };
+
+  // Friends Sync Logic
+  useEffect(() => {
+    if (!user) {
+      setFriendships([]);
+      return;
+    }
+    setLoadingFriends(true);
+    const q = query(collection(db, 'friendships'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.senderId === user.uid || data.receiverId === user.uid) {
+          list.push({ id: doc.id, ...data });
+        }
+      });
+      setFriendships(list);
+      setLoadingFriends(false);
+    }, (err) => {
+      console.error("Erro friendships snapshot:", err);
+      setLoadingFriends(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Search players in community
+  const handleSearchFriends = async () => {
+    if (!friendSearchQuery.trim()) {
+      setFriendSearchResults([]);
+      return;
+    }
+    setSearchingFriends(true);
+    triggerAudio('tap');
+    try {
+      const q = query(collection(db, 'leaderboard'));
+      const snapshot = await getDocs(q);
+      const results: any[] = [];
+      const queryLower = friendSearchQuery.toLowerCase().trim();
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const docName = (data.name || '').toLowerCase();
+        // Match partial name & skip current logged user
+        if (docName.includes(queryLower) && doc.id !== user?.uid) {
+          results.push({ id: doc.id, ...data });
+        }
+      });
+      
+      setFriendSearchResults(results);
+      if (results.length === 0) {
+        showAlert("🔍 Nenhum jogador encontrado com esse nome.");
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert("⚠️ Erro ao pesquisar jogadores.");
+    } finally {
+      setSearchingFriends(false);
+    }
+  };
+
+  // Send request
+  const handleSendFriendRequest = async (targetPlayer: any) => {
+    if (!user) {
+      showAlert("💡 Faça login ou registre-se para adicionar amigos reais globalmente!");
+      return;
+    }
+    if (targetPlayer.id === user.uid) {
+      showAlert("⚠️ Você não pode adicionar a si mesmo!");
+      return;
+    }
+
+    // Check if exists
+    const existing = friendships.find(f => 
+      (f.senderId === user.uid && f.receiverId === targetPlayer.id) ||
+      (f.senderId === targetPlayer.id && f.receiverId === user.uid)
+    );
+
+    if (existing) {
+      if (existing.status === 'accepted') {
+        showAlert("😊 Vocês já são amigos!");
+      } else {
+        showAlert("⏳ Já existe uma solicitação pendente entre vocês!");
+      }
+      return;
+    }
+
+    triggerAudio('success');
+    const docId = `${user.uid}_${targetPlayer.id}`;
+    try {
+      await setDoc(doc(db, 'friendships', docId), {
+        senderId: user.uid,
+        senderName: nickname,
+        receiverId: targetPlayer.id,
+        receiverName: targetPlayer.name || 'Jogador',
+        status: 'pending',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      showAlert(`✉️ Solicitação enviada para ${targetPlayer.name}!`);
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Não foi possível enviar a solicitação.");
+    }
+  };
+
+  // Accept request
+  const handleAcceptFriendRequest = async (friendship: any) => {
+    triggerAudio('success');
+    try {
+      await setDoc(doc(db, 'friendships', friendship.id), {
+        ...friendship,
+        status: 'accepted',
+        updatedAt: Date.now()
+      });
+      showAlert(`🎉 Amizade com ${friendship.senderId === user.uid ? friendship.receiverName : friendship.senderName} aceita!`);
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Erro ao aceitar solicitação.");
+    }
+  };
+
+  // Decline/Remove request or friendship
+  const handleRemoveFriendship = async (friendshipId: string) => {
+    if (window.confirm("Deseja desfazer essa amizade ou cancelar o convite?")) {
+      triggerAudio('tap');
+      try {
+        await deleteDoc(doc(db, 'friendships', friendshipId));
+        showAlert("🗑️ Amizade removida com sucesso!");
+      } catch (err) {
+        console.error(err);
+        showAlert("❌ Erro ao remover amizade.");
+      }
+    }
+  };
+
+  // Guest Local Friends
+  const handleAddGuestFriend = (e: React.FormEvent) => {
+    e.preventDefault();
+    const input = (document.getElementById('guest-friend-name-input') as HTMLInputElement);
+    const name = input?.value?.trim();
+    if (!name) return;
+    
+    const formatted = name.replace(/\s+/g, '_');
+    if (guestFriends.includes(formatted)) {
+      showAlert("⚠️ Esse amigo já está na sua lista!");
+      return;
+    }
+    
+    const newList = [...guestFriends, formatted];
+    setGuestFriends(newList);
+    localStorage.setItem('pkxd_guest_friends', JSON.stringify(newList));
+    triggerAudio('success');
+    showAlert(`👥 ${formatted} adicionado à lista local!`);
+    if (input) input.value = '';
+  };
+
+  const handleRemoveGuestFriend = (name: string) => {
+    const newList = guestFriends.filter(f => f !== name);
+    setGuestFriends(newList);
+    localStorage.setItem('pkxd_guest_friends', JSON.stringify(newList));
+    triggerAudio('tap');
+    showAlert("🗑️ Amigo local removido.");
   };
 
   // Claim Daily reward redirect (Coins and Gems cannot be registered just by clicking)
@@ -416,6 +594,21 @@ export default function AppleProfileHeader({
             <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Ajustes do Perfil</span>
           </button>
 
+          {/* Friends List Toggle */}
+          <button
+            onClick={() => {
+              triggerAudio('tap');
+              setShowFriendsPanel(!showFriendsPanel);
+              setIsEditing(false);
+              setIsStoreOpen(false);
+            }}
+            className={`p-2 rounded-xl transition-all hover:bg-purple-900/40 text-purple-300 active:scale-95 cursor-pointer flex items-center gap-1.5 ${showFriendsPanel ? 'bg-purple-950/70 border border-purple-500/40 text-purple-200' : 'bg-neutral-900/50 border border-neutral-800/40'}`}
+            title="Lista de Amigos"
+          >
+            <Users className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Amigos</span>
+          </button>
+
           {/* Claim Reward Button */}
           <button
             onClick={handleClaimFreeReward}
@@ -539,19 +732,44 @@ export default function AppleProfileHeader({
                   <span>Ajustar Perfil</span>
                 </button>
 
+                {/* Friends manager button */}
+                <button
+                  onClick={() => {
+                    triggerAudio('tap');
+                    setShowFriendsPanel(!showFriendsPanel);
+                    setIsEditing(false);
+                    setIsStoreOpen(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 py-1.5 px-3 border rounded-full transition-all text-[11px] font-bold active:scale-95 cursor-pointer shadow-sm ${
+                    showFriendsPanel 
+                      ? 'bg-purple-955/40 border-purple-500/30 text-purple-300' 
+                      : 'bg-neutral-800/40 hover:bg-neutral-700/40 border-neutral-700/50 text-neutral-200'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Amigos</span>
+                  {user && friendships.filter(f => f.status === 'pending' && f.receiverId === user.uid).length > 0 && (
+                    <span className="bg-red-500 text-white text-[9px] font-black h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
+                      {friendships.filter(f => f.status === 'pending' && f.receiverId === user.uid).length}
+                    </span>
+                  )}
+                </button>
+
                 {/* Marketplace button */}
                 <button
                   onClick={() => {
                     triggerAudio('tap');
                     setIsStoreOpen(!isStoreOpen);
+                    setIsEditing(false);
+                    setShowFriendsPanel(false);
                   }}
                   className={`inline-flex items-center gap-1.5 py-1.5 px-3 border rounded-full transition-all text-[11px] font-bold active:scale-95 cursor-pointer shadow-sm ${
                     isStoreOpen 
-                      ? 'bg-purple-100 border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300' 
-                      : 'bg-neutral-100/70 hover:bg-neutral-200/70 dark:bg-neutral-800/40 dark:hover:bg-neutral-700/40 border-neutral-200/50 dark:border-neutral-700/50 text-neutral-700 dark:text-neutral-200'
+                      ? 'bg-purple-955/40 border-purple-500/30 text-purple-300' 
+                      : 'bg-neutral-800/40 hover:bg-neutral-700/40 border-neutral-700/50 text-neutral-200'
                   }`}
                 >
-                  <Store className="w-3.5 h-3.5 text-purple-500" />
+                  <Store className="w-3.5 h-3.5 text-purple-400" />
                   <span>Loja de Avatares</span>
                   {shopAvatars.length > 0 && (
                     <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
@@ -719,6 +937,271 @@ export default function AppleProfileHeader({
                   >
                     Cancelar
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ==========================================================================
+           3.5. GERENCIADOR DE AMIGOS (FRIENDS SYSTEM)
+           ========================================================================== */}
+        <AnimatePresence>
+          {showFriendsPanel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden border-t border-purple-500/10 mt-5 pt-4 text-left"
+            >
+              <div className="space-y-5">
+                <div className="flex items-center justify-between border-b border-purple-500/10 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider">Painel de Amigos da Central</h3>
+                      <p className="text-[10px] text-neutral-400">Adicione outros fãs de PK XD para ver suas pontuações e perfis em tempo real! 👥</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* LEFT COLUMN: ADD FRIENDS */}
+                  <div className="bg-neutral-900/40 border border-purple-500/15 p-4 rounded-2xl space-y-4">
+                    <h4 className="text-xs font-black text-purple-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <UserPlus className="w-4 h-4" />
+                      <span>Adicionar Novos Amigos</span>
+                    </h4>
+
+                    {user ? (
+                      <div className="space-y-3">
+                        <p className="text-[11px] text-neutral-300 leading-relaxed">
+                          Digite o apelido de um jogador cadastrado na comunidade para enviar uma solicitação de amizade:
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={friendSearchQuery}
+                            onChange={(e) => setFriendSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
+                            placeholder="Buscar por apelido..."
+                            className="bg-neutral-950 border border-purple-500/20 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-purple-500 flex-1"
+                          />
+                          <button
+                            onClick={handleSearchFriends}
+                            disabled={searchingFriends}
+                            className="p-2 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-black uppercase rounded-xl cursor-pointer flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                          >
+                            {searchingFriends ? "..." : <Search className="w-3.5 h-3.5" />}
+                            <span>Buscar</span>
+                          </button>
+                        </div>
+
+                        {/* Search Results */}
+                        {friendSearchResults.length > 0 && (
+                          <div className="space-y-2 mt-2 max-h-[160px] overflow-y-auto pr-1">
+                            <h5 className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Jogadores Encontrados:</h5>
+                            {friendSearchResults.map((player) => {
+                              const isAlreadyFriend = friendships.some(f => 
+                                f.status === 'accepted' && 
+                                (f.senderId === player.id || f.receiverId === player.id)
+                              );
+                              const isPending = friendships.some(f => 
+                                f.status === 'pending' && 
+                                (f.senderId === player.id || f.receiverId === player.id)
+                              );
+
+                              return (
+                                <div key={player.id} className="p-2.5 bg-neutral-950/60 border border-purple-500/10 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-purple-950 flex items-center justify-center font-bold text-purple-300 text-[11px] border border-purple-500/20">
+                                      {player.name ? player.name.slice(0, 2).toUpperCase() : 'PK'}
+                                    </div>
+                                    <div>
+                                      <div className="font-bold text-white flex items-center gap-1">
+                                        <span>{player.name}</span>
+                                        {player.level >= 10 && <span className="text-[8px] bg-cyan-500/20 text-cyan-300 px-1 rounded">Mestre</span>}
+                                      </div>
+                                      <div className="text-[9px] text-neutral-400">Nível {player.level || 1} • {player.flames || 1} 🔥</div>
+                                    </div>
+                                  </div>
+
+                                  {isAlreadyFriend ? (
+                                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                                      <Check className="w-3.5 h-3.5" /> Amigo
+                                    </span>
+                                  ) : isPending ? (
+                                    <span className="text-[10px] font-semibold text-purple-400">
+                                      Pendente...
+                                    </span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleSendFriendRequest(player)}
+                                      className="py-1 px-2.5 bg-purple-600/30 hover:bg-purple-600 border border-purple-500/30 text-purple-200 hover:text-white rounded-lg text-[10px] font-extrabold uppercase transition-all active:scale-95 cursor-pointer"
+                                    >
+                                      Adicionar
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-purple-950/20 border border-purple-500/10 rounded-xl">
+                          <p className="text-[11px] text-purple-200 leading-relaxed font-semibold">
+                            💡 Você está navegando como Convidado! Amigos reais do servidor exigem uma conta. Crie ou acesse sua conta no menu de login abaixo!
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase block">Adicionar Amigo Local (Convidado)</p>
+                        <form onSubmit={handleAddGuestFriend} className="flex gap-2">
+                          <input
+                            id="guest-friend-name-input"
+                            type="text"
+                            maxLength={15}
+                            placeholder="Apelido do amigo..."
+                            className="bg-neutral-950 border border-purple-500/20 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-purple-500 flex-1"
+                          />
+                          <button
+                            type="submit"
+                            className="p-2 px-4 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black uppercase rounded-xl cursor-pointer"
+                          >
+                            Adicionar
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* RIGHT COLUMN: FRIENDS LIST & PENDING REQUESTS */}
+                  <div className="bg-neutral-900/40 border border-purple-500/15 p-4 rounded-2xl space-y-4">
+                    
+                    {user ? (
+                      <div className="space-y-4">
+                        {/* Pending Requests Section */}
+                        {friendships.some(f => f.status === 'pending' && f.receiverId === user.uid) && (
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-black text-rose-300 uppercase tracking-widest flex items-center gap-1.5">
+                              <UserCheck className="w-4 h-4 text-rose-400" />
+                              <span>Solicitações Pendentes</span>
+                            </h4>
+                            <div className="space-y-2">
+                              {friendships.filter(f => f.status === 'pending' && f.receiverId === user.uid).map((friendship) => (
+                                <div key={friendship.id} className="p-2.5 bg-neutral-950/60 border border-rose-500/20 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-rose-950 flex items-center justify-center font-bold text-rose-300 text-[11px] border border-rose-500/20">
+                                      {friendship.senderName.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <span className="font-bold text-white">{friendship.senderName}</span>
+                                      <span className="block text-[8px] text-neutral-400">Quer ser seu amigo!</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      onClick={() => handleAcceptFriendRequest(friendship)}
+                                      className="p-1 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer"
+                                    >
+                                      Aceitar
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemoveFriendship(friendship.id)}
+                                      className="p-1 px-2.5 bg-red-600/45 hover:bg-red-600 text-white rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer"
+                                    >
+                                      Recusar
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Accepted Friends List */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-black text-purple-300 uppercase tracking-widest flex items-center gap-1.5">
+                            <Users className="w-4 h-4 text-purple-400" />
+                            <span>Seus Amigos ({friendships.filter(f => f.status === 'accepted').length})</span>
+                          </h4>
+
+                          {friendships.filter(f => f.status === 'accepted').length === 0 ? (
+                            <p className="text-[11px] text-neutral-400 italic">Você ainda não adicionou amigos na comunidade. Busque jogadores à esquerda! ✨</p>
+                          ) : (
+                            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                              {friendships.filter(f => f.status === 'accepted').map((friendship) => {
+                                const isSender = friendship.senderId === user.uid;
+                                const friendName = isSender ? friendship.receiverName : friendship.senderName;
+                                const friendId = isSender ? friendship.receiverId : friendship.senderId;
+
+                                return (
+                                  <div key={friendship.id} className="p-2.5 bg-neutral-950/60 border border-purple-500/10 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded-full bg-purple-950 flex items-center justify-center font-bold text-purple-300 text-xs border border-purple-500/20">
+                                        {friendName.slice(0, 2).toUpperCase()}
+                                      </div>
+                                      <div>
+                                        <div className="font-bold text-white">{friendName}</div>
+                                        <div className="text-[9px] text-neutral-400">Amigo Oficial Verificado</div>
+                                      </div>
+                                    </div>
+
+                                    <button
+                                      onClick={() => handleRemoveFriendship(friendship.id)}
+                                      title="Desfazer Amizade"
+                                      className="p-1.5 hover:bg-red-500/10 text-neutral-400 hover:text-red-400 rounded-lg transition-all cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-black text-purple-300 uppercase tracking-widest flex items-center gap-1.5">
+                          <Users className="w-4 h-4 text-purple-400" />
+                          <span>Lista de Amigos Local ({guestFriends.length})</span>
+                        </h4>
+
+                        {guestFriends.length === 0 ? (
+                          <p className="text-[11px] text-neutral-400 italic">Lista local vazia. Adicione nomes à esquerda!</p>
+                        ) : (
+                          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                            {guestFriends.map((friendName) => (
+                              <div key={friendName} className="p-2.5 bg-neutral-950/60 border border-purple-500/10 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-purple-950/50 flex items-center justify-center font-bold text-purple-300 text-xs border border-purple-500/10">
+                                    {friendName.slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <span className="font-bold text-white">{friendName}</span>
+                                    <span className="block text-[8px] text-neutral-400">Amigo de Treino (Convidado)</span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() => handleRemoveGuestFriend(friendName)}
+                                  title="Remover Amigo"
+                                  className="p-1.5 hover:bg-red-500/10 text-neutral-400 hover:text-red-400 rounded-lg transition-all cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
+
                 </div>
               </div>
             </motion.div>
