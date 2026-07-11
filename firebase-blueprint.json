@@ -191,9 +191,28 @@
         "hours": { "type": "string" }
       },
       "required": ["id", "submittedBy", "submittedByEmail", "createdAt", "status", "name", "contact", "age", "reason", "hours"]
+    },
+    "Post": {
+      "title": "Community Post",
+      "description": "A social network post published by a fan on PK XD Central",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorId": { "type": "string" },
+        "content": { "type": "string" },
+        "likes": { "type": "number" },
+        "likedBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "authorName", "authorId", "content", "likes", "createdAt"]
     }
   },
   "firestore": {
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Collection of social posts shared by users on PK XD Central"
+    },
     "/news/{newsId}": {
       "schema": "News",
       "description": "Collection of community news and updates"

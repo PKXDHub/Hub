@@ -12,6 +12,8 @@ import BestShorts from './components/BestShorts';
 import FanLevelSection from './components/FanLevelSection';
 import PastSpoilersSection from './components/PastSpoilersSection';
 import ApplicationsSection from './components/ApplicationsSection';
+import SocialSection from './components/SocialSection';
+import MissionsSection from './components/MissionsSection';
 import { 
   Sparkles, 
   Settings, 
@@ -165,6 +167,7 @@ export default function App() {
     return false;
   });
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState<'inicio' | 'comunidade' | 'missoes'>('inicio');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Fallback passcode login states
@@ -346,9 +349,9 @@ export default function App() {
   useEffect(() => {
     try {
       if (isApplicationsRoute) {
-        document.title = "PKXD Hub - Inscrições";
+        document.title = "PKXD Central - Inscrições";
       } else {
-        document.title = "PKXD Hub";
+        document.title = "PKXD Central";
       }
     } catch (e) {
       console.warn(e);
@@ -1870,10 +1873,10 @@ export default function App() {
       <nav id="nav-header" className="sticky top-0 z-20 bg-purple-600 border-b-4 border-purple-800 select-none py-3.5 px-4 sm:px-6 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
-          {/* Brand Name - Site icon removed as requested & changed to PKXD Hub */}
+          {/* Brand Name - Site icon removed as requested & changed to PKXD Central */}
           <div>
             <h1 className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-white uppercase drop-shadow-[0_2px_0_rgba(0,0,0,0.4)] transform skew-x-[-2deg]">
-              PKXD <span className="text-yellow-300">Hub</span>
+              PKXD <span className="text-yellow-300">Central</span>
             </h1>
             <p className="font-sans text-[9px] sm:text-[10px] text-purple-200 font-extrabold uppercase tracking-widest leading-none">
               Notícias, Spoilers e Códigos!
@@ -1966,7 +1969,7 @@ export default function App() {
 
             {/* Subtitle description */}
             <p className="font-sans text-sm sm:text-base text-gray-300 leading-relaxed max-w-xl mx-auto">
-              Seja bem-vindo ao portal fan-hub do <strong>PKXD Hub</strong>! Fique ligado nas datas, resgate as joias secretas, junte-se à nossa gigante comunidade do WhatsApp e veja as revelações de spoilers toda segunda-feira.
+              Seja bem-vindo ao portal fan-hub do <strong>PKXD Central</strong>! Fique ligado nas datas, resgate as joias secretas, junte-se à nossa gigante comunidade do WhatsApp e veja as revelações de spoilers toda segunda-feira.
             </p>
 
             {/* WhatsApp Direct CTA mini-badge */}
@@ -2112,7 +2115,7 @@ export default function App() {
                         Você está autenticado como leitor de email <span className="font-mono text-white underline">{maskEmail(user.email)}</span>, mas seu usuário não possui permissão de escrita de administrador no sistema. 
                       </p>
                       <p className="text-gray-400">
-                        Se você for o proprietário deste portal, por favor faça login com o endereço de email do Administrador do PKXD Hub correspondente.
+                        Se você for o proprietário deste portal, por favor faça login com o endereço de email do Administrador do PKXD Central correspondente.
                       </p>
                     </div>
                   ) : (
@@ -2314,224 +2317,301 @@ export default function App() {
           />
         ) : (
           <>
-        {/* Dynamic Countdown clock Widget with optional alternative timer */}
-        {(() => {
-          // Check if the current spoiler highlight is active
-          const isSpoilerActive = (() => {
-            if (forceReveal) {
-              if (revealedAt && Date.now() - revealedAt >= 60 * 60 * 1000) {
-                return false;
-              }
-              return true;
-            }
+            {/* Visual Navigation Tab Bar for "New Phase" - Neutral Elegant & Formal styling */}
+            <div className="max-w-4xl mx-auto mb-8 bg-zinc-900/90 p-2 sm:p-2.5 rounded-3xl border-2 border-purple-500/40 flex items-center justify-between gap-1 sm:gap-2 shadow-[0_4px_25px_rgba(139,92,246,0.2)] select-none">
+              <button
+                onClick={() => {
+                  triggerAudio('tap');
+                  setActiveTab('inicio');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-2xl font-sans text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  activeTab === 'inicio'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md border-2 border-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <span>🏠</span>
+                <span>Início</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  triggerAudio('tap');
+                  setActiveTab('comunidade');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-2xl font-sans text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  activeTab === 'comunidade'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md border-2 border-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <span>👥</span>
+                <span>Mural</span>
+              </button>
 
-            const now = new Date();
-            const mondayThisWeek = new Date(now);
-            const dayOfWeek = now.getDay();
-            const daysToMonday = (1 - dayOfWeek - 7) % 7;
-            mondayThisWeek.setDate(now.getDate() + (dayOfWeek === 1 ? 0 : daysToMonday));
-            mondayThisWeek.setHours(17, 30, 0, 0);
+              <button
+                onClick={() => {
+                  triggerAudio('tap');
+                  setActiveTab('missoes');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-2xl font-sans text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  activeTab === 'missoes'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md border-2 border-purple-400'
+                    : 'text-gray-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <span>🎯</span>
+                <span>Missões</span>
+              </button>
+            </div>
 
-            const endWindow = new Date(mondayThisWeek);
-            endWindow.setHours(18, 30, 0, 0); // exactly 1 hour window
+            {activeTab === 'inicio' && (
+              <div className="space-y-12 animate-fade-in">
+                {/* Dynamic Countdown clock Widget with optional alternative timer */}
+                {(() => {
+                  // Check if the current spoiler highlight is active
+                  const isSpoilerActive = (() => {
+                    if (forceReveal) {
+                      if (revealedAt && Date.now() - revealedAt >= 60 * 60 * 1000) {
+                        return false;
+                      }
+                      return true;
+                    }
 
-            return now >= mondayThisWeek && now <= endWindow;
-          })();
+                    const now = new Date();
+                    const mondayThisWeek = new Date(now);
+                    const dayOfWeek = now.getDay();
+                    const daysToMonday = (1 - dayOfWeek - 7) % 7;
+                    mondayThisWeek.setDate(now.getDate() + (dayOfWeek === 1 ? 0 : daysToMonday));
+                    mondayThisWeek.setHours(17, 30, 0, 0);
 
-          // Do not filter out new/active spoilers so they appear instantly in Past Spoilers automatically
-          const filteredPastSpoilers = pastSpoilers;
+                    const endWindow = new Date(mondayThisWeek);
+                    endWindow.setHours(18, 30, 0, 0); // exactly 1 hour window
 
-          return (
-            <>
-              {giftCountdownEnabled && (
-                <GiftCountdown 
-                  title={giftCountdownTitle}
-                  targetDate={giftCountdownDate}
-                  enabled={giftCountdownEnabled}
-                  giftContent={giftCountdownContent}
-                />
-              )}
+                    return now >= mondayThisWeek && now <= endWindow;
+                  })();
 
-              <div className="max-w-4xl mx-auto" id="countdown-card-root">
-                <CountdownWidget 
-                  spoilerTitle={spoilerTitle}
-                  spoilerDesc={spoilerDesc}
-                  spoilerImageUrl={spoilerImage}
-                  onReveal={() => triggerAudio('levelUp')}
-                  extraCountdownTitle={extraCountdownTitle}
-                  extraCountdownDate={extraCountdownDate}
-                  extraCountdownEnabled={extraCountdownEnabled}
-                  forceReveal={forceReveal}
-                  revealedAt={revealedAt}
-                  isDelayed={isDelayed}
-                  delayMessage={delayMessage}
-                  onOpenFullscreen={(title, desc, img) => {
-                    setFullscreenData({ title, desc, imageUrl: img || '' });
-                    setIsFullscreenOpen(true);
-                  }}
-                />
+                  // Do not filter out new/active spoilers so they appear instantly in Past Spoilers automatically
+                  const filteredPastSpoilers = pastSpoilers;
+
+                  return (
+                    <>
+                      {giftCountdownEnabled && (
+                        <GiftCountdown 
+                          title={giftCountdownTitle}
+                          targetDate={giftCountdownDate}
+                          enabled={giftCountdownEnabled}
+                          giftContent={giftCountdownContent}
+                        />
+                      )}
+
+                      <div className="max-w-4xl mx-auto" id="countdown-card-root">
+                        <CountdownWidget 
+                          spoilerTitle={spoilerTitle}
+                          spoilerDesc={spoilerDesc}
+                          spoilerImageUrl={spoilerImage}
+                          onReveal={() => triggerAudio('levelUp')}
+                          extraCountdownTitle={extraCountdownTitle}
+                          extraCountdownDate={extraCountdownDate}
+                          extraCountdownEnabled={extraCountdownEnabled}
+                          forceReveal={forceReveal}
+                          revealedAt={revealedAt}
+                          isDelayed={isDelayed}
+                          delayMessage={delayMessage}
+                          onOpenFullscreen={(title, desc, img) => {
+                            setFullscreenData({ title, desc, imageUrl: img || '' });
+                            setIsFullscreenOpen(true);
+                          }}
+                        />
+                      </div>
+
+                      {/* Previous Spoilers Archive History list */}
+                      <div className="max-w-4xl mx-auto" id="past-spoilers-history-section-wrapper">
+                        <PastSpoilersSection 
+                          spoilers={filteredPastSpoilers}
+                          isAdmin={isAdmin}
+                          onDelete={handleDeletePastSpoiler}
+                          onEdit={(spoil) => {
+                            setPastSpoilerToEdit(spoil);
+                            // Scroll up to admin panel to see editing state
+                            document.getElementById('admin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          onRate={handleRatePastSpoiler}
+                          onReact={handleReactPastSpoiler}
+                        />
+                      </div>
+
+                      {/* Featured YouTube Videos Section - Placed exactly under the spoilers section */}
+                      <div className="max-w-4xl mx-auto" id="featured-videos-section-wrapper">
+                        <FeaturedVideos 
+                          videos={featuredList}
+                          isAdmin={isAdmin}
+                          currentUser={user}
+                          onDelete={handleDeleteFeaturedVideo}
+                          onAddXP={handleAddFanXP}
+                          onNavigate={navigateTo}
+                        />
+                      </div>
+
+                      {/* CANDIDATAR-SE A ADMIN BANNER - Placed exactly below the spoiler and featured videos section */}
+                      <div className="max-w-4xl mx-auto mt-8 mb-6 px-4 sm:px-0" id="admin-application-banner-under-spoilers">
+                        <div className="bg-gradient-to-r from-purple-900/60 via-indigo-950/70 to-zinc-900 border-2 border-purple-500/30 rounded-2xl p-6 shadow-[0_4px_25px_rgba(139,92,246,0.15)] hover:shadow-[0_4px_35px_rgba(139,92,246,0.25)] hover:border-purple-500/50 transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                          {/* Glowing neon side effect */}
+                          <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-pink-500 to-purple-600" />
+                          
+                          <div className="space-y-2 text-center md:text-left">
+                            <h4 className="font-sans font-black text-lg text-white uppercase tracking-tight flex items-center gap-2 justify-center md:justify-start font-bold">
+                              <span>✨ Quer fazer parte da equipe PKXD Central?</span>
+                            </h4>
+                            <p className="font-sans text-xs text-gray-300 max-w-xl leading-relaxed">
+                              Estamos recrutando novos administradores focados, criativos e cheios de energia! Se você ama o PK XD, quer ajudar a organizar spoilers, posts de novidades e gerenciar o fã-clube oficial do site, inscreva-se agora mesmo!
+                            </p>
+                          </div>
+
+                          <button 
+                            onClick={() => {
+                              triggerAudio('tap');
+                              navigateTo('/inscricoes#admin');
+                            }}
+                            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-650 hover:from-pink-400 hover:to-indigo-550 active:scale-[0.98] text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg border border-white/20 cursor-pointer flex items-center justify-center gap-2 transition-all flex-shrink-0 animate-pulse hover:animate-none"
+                          >
+                            <span>🔐 Candidatar para Admin 🌟</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Promo Code Redeemer Panel with 7-Day Expirations */}
+                      <div className="max-w-4xl mx-auto" id="promo-code-redeemer-section-wrapper">
+                        <PromoCodeRedeemer 
+                          videos={newsList.filter(item => {
+                            if (item.id === '1' || item.id === '2') return false;
+                            const timestamp = parseInt(item.id);
+                            if (isNaN(timestamp)) return true;
+                            // Ignore filtering for static fallback default contents (low ID integer markers)
+                            if (timestamp < 100000) return true;
+                            return Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000;
+                          })}
+                          isAdmin={isAdmin}
+                          onDeleteVideo={handleDeleteNews}
+                          onEditVideo={handleEditNewsRequest}
+                        />
+                      </div>
+
+                      {/* Best Shorts of the Week Section */}
+                      <div className="max-w-4xl mx-auto" id="best-shorts-section-wrapper">
+                        <BestShorts 
+                          shorts={shortsList}
+                          isAdmin={isAdmin}
+                          onDelete={handleDeleteShort}
+                          onNavigate={navigateTo}
+                        />
+                      </div>
+
+                      {/* Theories & PK XD News Publication Area */}
+                      <div className="max-w-4xl mx-auto" id="theories-section-wrapper">
+                        <TheoriesSection 
+                          theories={theoriesList}
+                          isAdmin={isAdmin}
+                          currentUser={user}
+                          onDelete={handleDeleteTheory}
+                          onLike={handleLikeTheory}
+                          onAddXP={handleAddFanXP}
+                          onNavigate={navigateTo}
+                        />
+                      </div>
+
+                      {/* WhatsApp Channel Promo Feature banner */}
+                      <WhatsAppPromo channelUrl={WHATSAPP_CHANNEL_URL} onAddXP={handleAddFanXP} />
+                    </>
+                  );
+                })()}
               </div>
+            )}
 
-              {/* Previous Spoilers Archive History list */}
-              <div className="max-w-4xl mx-auto" id="past-spoilers-history-section-wrapper">
-                <PastSpoilersSection 
-                  spoilers={filteredPastSpoilers}
-                  isAdmin={isAdmin}
-                  onDelete={handleDeletePastSpoiler}
-                  onEdit={(spoil) => {
-                    setPastSpoilerToEdit(spoil);
-                    // Scroll up to admin panel to see editing state
-                    document.getElementById('admin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  onRate={handleRatePastSpoiler}
-                  onReact={handleReactPastSpoiler}
-                />
-              </div>
-
-              {/* Featured YouTube Videos Section - Placed exactly under the spoilers section */}
-              <div className="max-w-4xl mx-auto" id="featured-videos-section-wrapper">
-                <FeaturedVideos 
-                  videos={featuredList}
-                  isAdmin={isAdmin}
+            {activeTab === 'comunidade' && (
+              <div className="max-w-4xl mx-auto animate-fade-in" id="social-feed-section-wrapper">
+                <SocialSection 
                   currentUser={user}
-                  onDelete={handleDeleteFeaturedVideo}
+                  isAdmin={isAdmin}
                   onAddXP={handleAddFanXP}
-                  onNavigate={navigateTo}
+                  soundEnabled={soundEnabled}
+                  triggerAudio={triggerAudio}
+                  onLoginRedirect={handleLoginRedirect}
                 />
               </div>
+            )}
 
-              {/* CANDIDATAR-SE A ADMIN BANNER - Placed exactly below the spoiler and featured videos section */}
-              <div className="max-w-4xl mx-auto mt-8 mb-6 px-4 sm:px-0" id="admin-application-banner-under-spoilers">
-                <div className="bg-gradient-to-r from-purple-900/60 via-indigo-950/70 to-zinc-900 border-2 border-purple-500/30 rounded-2xl p-6 shadow-[0_4px_25px_rgba(139,92,246,0.15)] hover:shadow-[0_4px_35px_rgba(139,92,246,0.25)] hover:border-purple-500/50 transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-                  {/* Glowing neon side effect */}
-                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-pink-500 to-purple-600" />
-                  
-                  <div className="space-y-2 text-center md:text-left">
-                    <h4 className="font-sans font-black text-lg text-white uppercase tracking-tight flex items-center gap-2 justify-center md:justify-start font-bold">
-                      <span>✨ Quer fazer parte da equipe PKXD Hub?</span>
-                    </h4>
-                    <p className="font-sans text-xs text-gray-300 max-w-xl leading-relaxed">
-                      Estamos recrutando novos administradores focados, criativos e cheios de energia! Se você ama o PK XD, quer ajudar a organizar spoilers, posts de novidades e gerenciar o fã-clube oficial do site, inscreva-se agora mesmo!
-                    </p>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      triggerAudio('tap');
-                      navigateTo('/inscricoes#admin');
-                    }}
-                    className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-650 hover:from-pink-400 hover:to-indigo-550 active:scale-[0.98] text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg border border-white/20 cursor-pointer flex items-center justify-center gap-2 transition-all flex-shrink-0 animate-pulse hover:animate-none"
-                  >
-                    <span>🔐 Candidatar para Admin 🌟</span>
-                  </button>
+            {activeTab === 'missoes' && (
+              <div className="max-w-4xl mx-auto space-y-12 animate-fade-in" id="missions-section-wrapper">
+                <MissionsSection 
+                  fanLevel={fanLevel}
+                  fanXP={fanXP}
+                  onAddXP={handleAddFanXP}
+                  triggerAudio={triggerAudio}
+                  soundEnabled={soundEnabled}
+                />
+                
+                {/* Fan Level section inside the Missions panel */}
+                <div id="fan-level-section-wrapper">
+                  <FanLevelSection 
+                    level={fanLevel}
+                    xp={fanXP}
+                    onAddXP={handleAddFanXP}
+                    onLevelUp={handleLevelUpCallback}
+                    soundEnabled={soundEnabled}
+                    user={user}
+                    onLogin={handleLogin}
+                    onLoginRedirect={handleLoginRedirect}
+                    onLogout={handleLogout}
+                    onEmailLogin={handleEmailLogin}
+                    onEmailRegister={handleEmailRegister}
+                    authError={googleAuthError}
+                    isAdmin={isAdmin}
+                    setFanLevel={setFanLevel}
+                    setFanXP={setFanXP}
+                  />
                 </div>
               </div>
-            </>
-          );
-        })()}
+            )}
 
-        {/* Fan Level section */}
-        <div className="max-w-4xl mx-auto" id="fan-level-section-wrapper">
-          <FanLevelSection 
-            level={fanLevel}
-            xp={fanXP}
-            onAddXP={handleAddFanXP}
-            onLevelUp={handleLevelUpCallback}
-            soundEnabled={soundEnabled}
-            user={user}
-            onLogin={handleLogin}
-            onLoginRedirect={handleLoginRedirect}
-            onLogout={handleLogout}
-            onEmailLogin={handleEmailLogin}
-            onEmailRegister={handleEmailRegister}
-            authError={googleAuthError}
-            isAdmin={isAdmin}
-            setFanLevel={setFanLevel}
-            setFanXP={setFanXP}
-          />
-        </div>
+            {/* Extra Information: FAQ/Guide cards */}
+            <div className="bg-zinc-900/40 rounded-3xl border border-white/5 p-6 sm:p-8 space-y-6 text-left select-none">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+                <h3 className="font-sans font-black text-xl text-white uppercase tracking-wide">
+                  Sobre o PKXD Central
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+                
+                <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
+                  <span className="text-xl">⚡</span>
+                  <h4 className="font-bold text-sm text-cyan-300">Notícias Oficiais</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Nossa equipe monitora constantemente as redes oficiais do PK XD para entregar conteúdos confirmados aos leitores. Não divulgamos informações vazadas e nunca vasculhamos os arquivos internos do jogo.
+                  </p>
+                </div>
 
-        {/* Promo Code Redeemer Panel with 7-Day Expirations */}
-        <div className="max-w-4xl mx-auto" id="promo-code-redeemer-section-wrapper">
-          <PromoCodeRedeemer 
-            videos={newsList.filter(item => {
-              if (item.id === '1' || item.id === '2') return false;
-              const timestamp = parseInt(item.id);
-              if (isNaN(timestamp)) return true;
-              // Ignore filtering for static fallback default contents (low ID integer markers)
-              if (timestamp < 100000) return true;
-              return Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000;
-            })}
-            isAdmin={isAdmin}
-            onDeleteVideo={handleDeleteNews}
-            onEditVideo={handleEditNewsRequest}
-          />
-        </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
+                  <span className="text-xl">📹</span>
+                  <h4 className="font-bold text-sm text-pink-300">Acompanhe as Lives e Canais</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Nós não mostramos códigos já prontos! Em vez disso, nós divulgamos e direcionamos você para as lives, vídeos e posts do Instagram onde os códigos originais vão aparecer. Podem confiar de olhos fechados: todas as transmissões e mídias recomendadas aqui pertencem exclusivamente a Creators Oficiais parceiros do PK XD.
+                  </p>
+                </div>
 
-        {/* Best Shorts of the Week Section */}
-        <div className="max-w-4xl mx-auto" id="best-shorts-section-wrapper">
-          <BestShorts 
-            shorts={shortsList}
-            isAdmin={isAdmin}
-            onDelete={handleDeleteShort}
-            onNavigate={navigateTo}
-          />
-        </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
+                  <span className="text-xl">📈</span>
+                  <h4 className="font-bold text-sm text-yellow-300">Comunidade Viva</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Mais do que apenas um site, somos um hub parceiro focado em unir os jogadores de PK XD. Venha debater teorias e trocar itens virtuais com a gente!
+                  </p>
+                </div>
 
-        {/* Theories & PK XD News Publication Area */}
-        <div className="max-w-4xl mx-auto" id="theories-section-wrapper">
-          <TheoriesSection 
-            theories={theoriesList}
-            isAdmin={isAdmin}
-            currentUser={user}
-            onDelete={handleDeleteTheory}
-            onLike={handleLikeTheory}
-            onAddXP={handleAddFanXP}
-            onNavigate={navigateTo}
-          />
-        </div>
-
-        {/* WhatsApp Channel Promo Feature banner */}
-        <WhatsAppPromo channelUrl={WHATSAPP_CHANNEL_URL} onAddXP={handleAddFanXP} />
-
-        {/* Extra Information: FAQ/Guide cards */}
-        <div className="bg-zinc-900/40 rounded-3xl border border-white/5 p-6 sm:p-8 space-y-6 text-left select-none">
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
-            <h3 className="font-sans font-black text-xl text-white uppercase tracking-wide">
-              Sobre o PKXD Hub
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-            
-            <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
-              <span className="text-xl">⚡</span>
-              <h4 className="font-bold text-sm text-cyan-300">Notícias Oficiais</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Nossa equipe monitora constantemente as redes oficiais do PK XD para entregar conteúdos confirmados aos leitores. Não divulgamos informações vazadas e nunca vasculhamos os arquivos internos do jogo.
-              </p>
+              </div>
             </div>
-
-            <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
-              <span className="text-xl">📹</span>
-              <h4 className="font-bold text-sm text-pink-300">Acompanhe as Lives e Canais</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Nós não mostramos códigos já prontos! Em vez disso, nós divulgamos e direcionamos você para as lives, vídeos e posts do Instagram onde os códigos originais vão aparecer. Podem confiar de olhos fechados: todas as transmissões e mídias recomendadas aqui pertencem exclusivamente a Creators Oficiais parceiros do PK XD.
-              </p>
-            </div>
-
-            <div className="space-y-1.5 p-4 rounded-xl bg-black/30 border border-white/5">
-              <span className="text-xl">📈</span>
-              <h4 className="font-bold text-sm text-yellow-300">Comunidade Viva</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Mais do que apenas um site, somos um hub parceiro focado em unir os jogadores de PK XD. Venha debater teorias e trocar itens virtuais com a gente!
-              </p>
-            </div>
-
-          </div>
-        </div>
-        </>
+          </>
         )}
 
       </main>
@@ -2540,10 +2620,10 @@ export default function App() {
       <footer id="main-footer" className="max-w-7xl mx-auto px-4 sm:px-6 pt-16 mt-8 select-none border-t border-white/10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           
-          {/* Logo brand - Removed site icon and updated title for PKXD Hub */}
+          {/* Logo brand - Removed site icon and updated title for PKXD Central */}
           <div className="flex items-center gap-2">
             <strong className="font-sans text-sm text-gray-300 uppercase tracking-wider">
-              PKXD Hub • 2026
+              PKXD Central • 2026
             </strong>
           </div>
 
@@ -2619,7 +2699,7 @@ export default function App() {
                             Portal PKXD
                           </span>
                           <span className="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded-md font-black tracking-normal uppercase">
-                            Hub
+                            Central
                           </span>
                         </h3>
                         <p className="text-[9px] text-cyan-400 font-mono tracking-wider">GUIA DE ATALHOS RÁPIDOS</p>
@@ -2789,7 +2869,7 @@ export default function App() {
                     </motion.a>
 
                     <p className="text-[8.5px] text-gray-500 text-center pt-2 font-mono leading-normal">
-                      PKXD Hub © 2026 • Comunidade Oficial de Fãs
+                      PKXD Central © 2026 • Comunidade Oficial de Fãs
                     </p>
                   </div>
 

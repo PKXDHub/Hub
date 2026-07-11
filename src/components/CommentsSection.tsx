@@ -19,7 +19,7 @@ import { checkIsIllicit } from '../utils/moderation';
 
 interface CommentsSectionProps {
   targetId: string;
-  targetType: 'theory' | 'video';
+  targetType: 'theory' | 'video' | 'post';
   currentUser: any; // User state from App.tsx
   isAdmin: boolean;
   onAddXP?: (amount: number, reason: string) => void;

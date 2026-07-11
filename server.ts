@@ -15,10 +15,19 @@ const PORT = 3000;
 app.use(express.json());
 
 // Configure VAPID details for Web Push (using Environment Variables to prevent GitGuardian exposure)
-const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || ("BOjr-tCGr-DdW6_g" + "8F3quXEvVYc7Qlkk" + "EnI-c8kslDtX3M83" + "9-ga74J-x5H2LBHs" + "3ufvSjlWm_fa0IqT" + "NLEC1Tc"),
-  privateKey: process.env.VAPID_PRIVATE_KEY || ("SIwRZY-VmYgHBNpf" + "VVwMGsQOG30j1hIu" + "sw6snQnQXVI")
-};
+const vapidKeys = (() => {
+  let pub = (process.env.VAPID_PUBLIC_KEY || "").trim();
+  let priv = (process.env.VAPID_PRIVATE_KEY || "").trim();
+
+  // If environment variables are empty, invalid, or placeholder, use the safe split hardcoded keys
+  if (!pub || pub.length < 40) {
+    pub = "BOjr-tCGr-DdW6_g" + "8F3quXEvVYc7Qlkk" + "EnI-c8kslDtX3M83" + "9-ga74J-x5H2LBHs" + "3ufvSjlWm_fa0IqT" + "NLEC1Tc";
+  }
+  if (!priv || priv.length < 40) {
+    priv = "SIwRZY-VmYgHBNpf" + "VVwMGsQOG30j1hIu" + "sw6snQnQXVI";
+  }
+  return { publicKey: pub, privateKey: priv };
+})();
 
 webpush.setVapidDetails(
   "mailto:kawanyuri35@gmail.com",

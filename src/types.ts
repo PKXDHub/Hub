@@ -77,14 +77,35 @@ export interface AppNotification {
 
 export interface AppComment {
   id: string;
-  targetId: string; // theory id or video id
-  targetType: 'theory' | 'video';
+  targetId: string; // theory id, video id, or post id
+  targetType: 'theory' | 'video' | 'post';
   authorName: string;
   authorId?: string; // firebase user uid if authenticated
   authorAvatar?: string; // photoURL if logged in
   content: string;
   status: 'approved' | 'pending_review' | 'blocked';
   createdAt: number;
+}
+
+export interface Post {
+  id: string;
+  authorName: string;
+  authorId: string;
+  authorAvatar?: string;
+  content: string;
+  likes: number;
+  likedBy: string[]; // user uids
+  createdAt: number;
+}
+
+export interface DailyMission {
+  id: string;
+  title: string;
+  description: string;
+  xpReward: number;
+  completed: boolean;
+  claimed: boolean;
+  type: 'post' | 'spin' | 'chest' | 'like' | 'visit_whatsapp';
 }
 
 

@@ -117,5 +117,13 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isDeletable();
     }
+
+    // Posts rules
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if isDeletable();
+    }
   }
 }
