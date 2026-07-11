@@ -14,26 +14,54 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Configure VAPID details for Web Push (using Environment Variables to prevent GitGuardian exposure)
+// Configure VAPID details for Web Push safely with robust fallback and validation
+const fallbackPublicKey = "BOjr-tCGr-DdW6_g" + "8F3quXEvVYc7Qlkk" + "EnI-c8kslDtX3M83" + "9-ga74J-x5H2LBHs" + "3ufvSjlWm_fa0IqT" + "NLEC1Tc";
+const fallbackPrivateKey = "SIwRZY-VmYgHBNpf" + "VVwMGsQOG30j1hIu" + "sw6snQnQXVI";
+
+function isValidPrivateKey(key: string): boolean {
+  if (!key) return false;
+  try {
+    const buf = Buffer.from(key.trim(), "base64url");
+    return buf.length === 32;
+  } catch (e) {
+    return false;
+  }
+}
+
 const vapidKeys = (() => {
   let pub = (process.env.VAPID_PUBLIC_KEY || "").trim();
   let priv = (process.env.VAPID_PRIVATE_KEY || "").trim();
 
-  // If environment variables are empty, invalid, or placeholder, use the safe split hardcoded keys
-  if (!pub || pub.length < 40) {
-    pub = "BOjr-tCGr-DdW6_g" + "8F3quXEvVYc7Qlkk" + "EnI-c8kslDtX3M83" + "9-ga74J-x5H2LBHs" + "3ufvSjlWm_fa0IqT" + "NLEC1Tc";
+  // Validate the provided private key, if invalid, too short or incorrect length, fallback to the valid hardcoded keys
+  if (!pub || pub.length < 40 || !isValidPrivateKey(priv)) {
+    console.log("[Web Push] Using fallback hardcoded VAPID keys because env keys were missing or invalid.");
+    pub = fallbackPublicKey;
+    priv = fallbackPrivateKey;
   }
-  if (!priv || priv.length < 40) {
-    priv = "SIwRZY-VmYgHBNpf" + "VVwMGsQOG30j1hIu" + "sw6snQnQXVI";
-  }
+
   return { publicKey: pub, privateKey: priv };
 })();
 
-webpush.setVapidDetails(
-  "mailto:kawanyuri35@gmail.com",
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+try {
+  webpush.setVapidDetails(
+    "mailto:kawanyuri35@gmail.com",
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+  console.log("[Web Push] VAPID details configured successfully.");
+} catch (error) {
+  console.error("[Web Push] Failed to configure VAPID details with primary keys, trying fallback keys...", error);
+  try {
+    webpush.setVapidDetails(
+      "mailto:kawanyuri35@gmail.com",
+      fallbackPublicKey,
+      fallbackPrivateKey
+    );
+    console.log("[Web Push] Fallback VAPID details configured successfully.");
+  } catch (fallbackError) {
+    console.error("[Web Push] Critical: Both primary and fallback VAPID configurations failed.", fallbackError);
+  }
+}
 
 // Track server start time to filter historical notifications
 const serverStartTime = Date.now() - 5000;

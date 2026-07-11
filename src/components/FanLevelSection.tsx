@@ -312,7 +312,7 @@ export default function FanLevelSection({
       }
 
       setIsLoadingProfile(true);
-      const cleanedId = user.uid.trim().replace(/[^a-zA-Z0-9_\-]/g, '');
+      const cleanedId = user.uid.trim();
       const userDocRef = doc(db, 'leaderboard', cleanedId);
       
       try {
@@ -395,7 +395,7 @@ export default function FanLevelSection({
       // ONLY sync real authenticated profiles to direct database to prevent duplicates/spoofing
       if (!user?.uid) return;
 
-      const cleanedId = user.uid.trim().replace(/[^a-zA-Z0-9_\-]/g, '');
+      const cleanedId = user.uid.trim();
       if (!cleanedId || cleanedId.length === 0) return;
 
       const userDoc = doc(db, 'leaderboard', cleanedId);

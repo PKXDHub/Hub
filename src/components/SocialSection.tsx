@@ -394,50 +394,56 @@ export default function SocialSection({
                     key={post.id}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-zinc-900/50 border border-white/5 rounded-3xl p-5 text-left space-y-4 hover:border-white/10 transition-all shadow-md group relative overflow-hidden"
+                    className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-5 text-left space-y-4 hover:shadow-md transition-all relative overflow-hidden"
                   >
-                    {/* Corner gradient glow line */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
-
-                    {/* Author block */}
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                    {/* Author block - Instagram Style */}
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        {/* Avatar */}
+                        {/* Avatar with beautiful Instagram gradient ring */}
                         <button
                           onClick={() => {
                             triggerAudio('tap');
                             setSelectedProfileId(post.authorId || null);
                           }}
-                          className="w-11 h-11 rounded-full bg-zinc-950 border border-purple-500/20 hover:border-purple-400 hover:scale-105 active:scale-95 flex items-center justify-center text-2xl transition-all cursor-pointer shadow-inner relative"
+                          className="w-12 h-12 rounded-full p-[2.5px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 hover:scale-105 active:scale-95 transition-all cursor-pointer relative"
                         >
-                          <span className="select-none">{getAvatarFallback(post.authorName)}</span>
-                          <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-zinc-900 rounded-full" />
+                          <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-xl shadow-inner">
+                            <span className="select-none">{getAvatarFallback(post.authorName)}</span>
+                          </div>
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" title="Online" />
                         </button>
 
                         <div className="space-y-0.5">
-                          <button
-                            onClick={() => {
-                              triggerAudio('tap');
-                              setSelectedProfileId(post.authorId || null);
-                            }}
-                            className="font-mono text-xs sm:text-sm font-black text-white hover:text-cyan-300 hover:underline text-left cursor-pointer transition-colors block"
-                          >
-                            {post.authorName}
-                          </button>
+                          <div className="flex items-center flex-wrap gap-1">
+                            <button
+                              onClick={() => {
+                                triggerAudio('tap');
+                                setSelectedProfileId(post.authorId || null);
+                              }}
+                              className="font-sans text-sm font-bold text-neutral-900 hover:text-purple-600 hover:underline text-left cursor-pointer transition-colors block"
+                            >
+                              {post.authorName}
+                            </button>
+                            
+                            {/* Blue Verified Badge for Admin and VIP Creators */}
+                            {(post.authorName.toLowerCase().includes('admin') || post.authorId === 'admin_fallback' || post.authorId === 'p6u6hBInG8fS6hPzC78p4KXD') && (
+                              <span className="inline-flex items-center justify-center bg-sky-500 text-white rounded-full text-[7px] font-black w-3.5 h-3.5 select-none" title="Criador Oficial Verificado">
+                                ✓
+                              </span>
+                            )}
+                          </div>
                           
-                          <div className="flex items-center gap-1.5 text-[9.5px] text-gray-400 font-mono uppercase tracking-wider">
-                            <Clock className="w-3 h-3 text-gray-500" />
-                            <span>{new Date(post.createdAt).toLocaleDateString('pt-BR')} • {new Date(post.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <div className="text-[10px] text-neutral-400 font-sans">
+                            <span>{new Date(post.createdAt).toLocaleDateString('pt-BR')} às {new Date(post.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {/* Admin Badge */}
-                        {post.authorName.toLowerCase().includes('admin') || post.authorId === 'admin_fallback' || post.authorId === 'p6u6hBInG8fS6hPzC78p4KXD' ? (
-                          <span className="text-[9px] font-black bg-gradient-to-r from-red-500 to-amber-500 text-white border border-red-500/30 px-2 py-0.5 rounded-md uppercase tracking-widest flex items-center gap-1">
-                            <Shield className="w-2.5 h-2.5 fill-white" />
-                            <span>ADMIN</span>
+                        {(post.authorName.toLowerCase().includes('admin') || post.authorId === 'admin_fallback' || post.authorId === 'p6u6hBInG8fS6hPzC78p4KXD') ? (
+                          <span className="text-[8px] font-black bg-neutral-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            CREATOR
                           </span>
                         ) : null}
 
@@ -446,7 +452,7 @@ export default function SocialSection({
                           <button
                             onClick={() => handleDeletePost(post.id)}
                             title="Excluir Post"
-                            className="p-1.5 text-red-400 hover:text-white bg-red-500/10 hover:bg-red-600 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-neutral-100 rounded-lg transition-all cursor-pointer flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -454,24 +460,24 @@ export default function SocialSection({
                       </div>
                     </div>
 
-                    {/* Content text */}
-                    <p className="font-sans text-xs sm:text-sm text-gray-200 leading-relaxed whitespace-pre-line font-medium pl-0.5">
+                    {/* Content text - clean, high legibility */}
+                    <p className="font-sans text-sm text-neutral-800 leading-relaxed whitespace-pre-line pl-1 font-normal">
                       {post.content}
                     </p>
 
-                    {/* Actions and triggers */}
-                    <div className="flex items-center gap-6 pt-3 border-t border-white/5 text-gray-400 text-xs font-mono">
+                    {/* Actions and triggers - Elegant Instagram Action Bar */}
+                    <div className="flex items-center gap-6 pt-3 border-t border-neutral-100 text-neutral-500 text-xs font-semibold">
                       {/* Like button */}
                       <button
                         onClick={() => handleLikePost(post)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all cursor-pointer hover:scale-102 active:scale-98 ${
+                        className={`flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                           isLikedByMe 
-                            ? 'bg-rose-500/10 border-rose-500/40 text-rose-400' 
-                            : 'bg-zinc-950 border-white/5 hover:border-rose-500/30 hover:text-rose-400'
+                            ? 'text-rose-500' 
+                            : 'text-neutral-500 hover:text-rose-500'
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${isLikedByMe ? 'fill-rose-500 text-rose-500' : 'text-gray-400'}`} />
-                        <span>{post.likes}</span>
+                        <Heart className={`w-5 h-5 transition-transform ${isLikedByMe ? 'fill-rose-500 text-rose-500 scale-110' : ''}`} />
+                        <span>{post.likes === 1 ? "1 curtida" : `${post.likes} curtidas`}</span>
                       </button>
 
                       {/* Comment foldout trigger */}
@@ -480,13 +486,13 @@ export default function SocialSection({
                           triggerAudio('tap');
                           setActiveCommentsPostId(activeCommentsPostId === post.id ? null : post.id);
                         }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all cursor-pointer hover:scale-102 active:scale-98 ${
+                        className={`flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                           activeCommentsPostId === post.id
-                            ? 'bg-purple-500/10 border-purple-500/40 text-purple-400'
-                            : 'bg-zinc-950 border-white/5 hover:border-purple-500/30 hover:text-purple-400'
+                            ? 'text-purple-600'
+                            : 'text-neutral-500 hover:text-purple-600'
                         }`}
                       >
-                        <MessageSquare className="w-4 h-4 text-gray-400" />
+                        <MessageSquare className="w-5 h-5" />
                         <span>Comentários</span>
                       </button>
                     </div>
@@ -498,7 +504,7 @@ export default function SocialSection({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden pt-4 mt-2 border-t border-white/5"
+                          className="overflow-hidden pt-4 mt-2 border-t border-neutral-100"
                         >
                           <CommentsSection
                             targetId={post.id}

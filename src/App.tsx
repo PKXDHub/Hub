@@ -14,6 +14,7 @@ import PastSpoilersSection from './components/PastSpoilersSection';
 import ApplicationsSection from './components/ApplicationsSection';
 import SocialSection from './components/SocialSection';
 import MissionsSection from './components/MissionsSection';
+import AppleProfileHeader from './components/AppleProfileHeader';
 import { 
   Sparkles, 
   Settings, 
@@ -1790,7 +1791,7 @@ export default function App() {
   };
 
   return (
-    <div id="pkxd-app-root" className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-yellow-400 selection:text-black pb-16 relative overflow-x-hidden bg-pkxd-texture">
+    <div id="pkxd-app-root" className="theme-neutral min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-yellow-400 selection:text-black pb-16 relative overflow-x-hidden bg-pkxd-texture">
       
       {/* Premium ambient space backdrop glows */}
       <div className="absolute top-1/4 right-[10%] w-[500px] h-[500px] pointer-events-none select-none rounded-full" style={{ backgroundImage: 'radial-gradient(circle, var(--glow-1) 0%, transparent 70%)' }} />
@@ -1991,7 +1992,18 @@ export default function App() {
       )}
 
       {/* Main Grid Area */}
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 pt-4">
+        
+        {/* Apple Style Premium Profile Header */}
+        <AppleProfileHeader
+          user={user}
+          fanLevel={fanLevel}
+          fanXP={fanXP}
+          soundEnabled={soundEnabled}
+          triggerAudio={triggerAudio}
+          showAdminPanel={showAdminPanel}
+          setShowAdminPanel={setShowAdminPanel}
+        />
         
         {/* Admin Panel / Google Login Area */}
         {showAdminPanel && (
