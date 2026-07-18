@@ -171,6 +171,21 @@ export default function App() {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [activeTab, setActiveTab] = useState<'inicio' | 'comunidade' | 'missoes' | 'artes'>('inicio');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthInitializing, setIsAuthInitializing] = useState(true);
+  const [continuedAsGuest, setContinuedAsGuest] = useState(() => {
+    try {
+      return sessionStorage.getItem('pkxd_continued_as_guest') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  // Entry login modal states
+  const [modalAuthTab, setModalAuthTab] = useState<'register' | 'login'>('register');
+  const [modalEmail, setModalEmail] = useState('');
+  const [modalPassword, setModalPassword] = useState('');
+  const [modalNickname, setModalNickname] = useState('');
+  const [modalAuthError, setModalAuthError] = useState<string | null>(null);
 
   // Fallback passcode login states
   const [useBackupPasscode, setUseBackupPasscode] = useState(false);
@@ -469,6 +484,7 @@ export default function App() {
               email: 'kawanyuri35@gmail.com',
               displayName: 'Kawanyuri (Admin)',
             } as any);
+            setIsAuthInitializing(false);
             return;
           }
         } catch (e) {}
@@ -476,6 +492,7 @@ export default function App() {
         setIsAdmin(false);
         setUser(null);
       }
+      setIsAuthInitializing(false);
     });
     return () => unsubscribe();
   }, []);
@@ -1064,6 +1081,10 @@ export default function App() {
       } catch (e) {}
       setUser(null);
       setIsAdmin(false);
+      setContinuedAsGuest(false);
+      try {
+        sessionStorage.removeItem('pkxd_continued_as_guest');
+      } catch (e) {}
 
       // Reset the local stats and localStorage key defaults to completely isolate anonymous sessions from authenticated sessions
       setFanLevel(1);
@@ -1087,6 +1108,13 @@ export default function App() {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const handleSwitchTab = (tab: 'register' | 'login') => {
+    triggerAudio('tap');
+    setModalAuthTab(tab);
+    setGoogleAuthError(null);
+    setModalAuthError(null);
   };
 
   const checkAdminWritePermission = (): boolean => {
@@ -1793,6 +1821,239 @@ export default function App() {
 
   return (
     <div id="pkxd-app-root" className="theme-dark min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-yellow-400 selection:text-black pb-16 relative overflow-x-hidden bg-pkxd-texture">
+      
+      {/* Entry Auth & Guest Modal Overlay */}
+      <AnimatePresence>
+        {!isAuthInitializing && !user && !continuedAsGuest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl overflow-y-auto">
+            {/* Ambient glows behind the modal */}
+            <div className="absolute top-1/4 left-1/4 w-60 h-60 bg-pink-500/10 rounded-full filter blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-60 h-60 bg-indigo-500/10 rounded-full filter blur-3xl pointer-events-none" />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="bg-zinc-900 border border-pink-500/30 rounded-3xl w-full max-w-md p-6 sm:p-8 relative shadow-[0_10px_50px_rgba(219,39,119,0.2)] space-y-6 text-center select-none my-8"
+            >
+              {/* Header Icon */}
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.35)] animate-pulse">
+                <Gamepad2 className="w-8 h-8 fill-pink-400" />
+              </div>
+
+              {/* Title Block */}
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/30 px-3 py-1 rounded-full text-pink-400 font-mono text-[10px] font-extrabold uppercase tracking-widest">
+                  <Sparkles className="w-3 h-3 text-pink-400" />
+                  Portal PK XD Central
+                </div>
+                <h3 className="font-sans font-black text-2xl text-white uppercase tracking-wider leading-none pt-2">
+                  Seja Bem-vindo! 🔮
+                </h3>
+                <p className="font-sans text-[11px] text-zinc-400 leading-normal">
+                  Crie sua conta de fã para subir no Ranking, mudar seu apelido e salvar suas conquistas!
+                </p>
+              </div>
+
+              {/* Auth Mode Tabs Selector */}
+              <div className="flex bg-zinc-950/80 p-1 rounded-2xl border border-white/5">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab('register')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    modalAuthTab === 'register' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  🚀 Criar Conta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchTab('login')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    modalAuthTab === 'login' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  🔑 Já tenho Conta
+                </button>
+              </div>
+
+              {/* Error messages block */}
+              {(googleAuthError || modalAuthError) && (
+                <div className="bg-red-500/15 border border-red-500/30 p-3.5 rounded-2xl text-left flex gap-2.5 items-start text-xs text-red-200">
+                  <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="leading-relaxed font-sans text-[11px]">
+                    {modalAuthError || googleAuthError}
+                  </p>
+                </div>
+              )}
+
+              {/* Form Render */}
+              {modalAuthTab === 'register' ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setModalAuthError(null);
+                    if (!modalNickname.trim()) {
+                      setModalAuthError('⚠️ Por favor, escolha um apelido fofo!');
+                      return;
+                    }
+                    if (modalPassword.length < 6) {
+                      setModalAuthError('⚠️ A senha precisa ter pelo menos 6 caracteres!');
+                      return;
+                    }
+                    handleEmailRegister(modalEmail, modalPassword, modalNickname);
+                  }}
+                  className="space-y-4 text-left"
+                >
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-400 uppercase tracking-widest mb-1 ml-0.5">
+                        Apelido no Ranking (Nickname)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={15}
+                        placeholder="Ex: Gamer_PK"
+                        value={modalNickname}
+                        onChange={(e) => setModalNickname(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-400 uppercase tracking-widest mb-1 ml-0.5">
+                        E-mail
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="seuemail@exemplo.com"
+                        value={modalEmail}
+                        onChange={(e) => setModalEmail(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-400 uppercase tracking-widest mb-1 ml-0.5">
+                        Senha Secreta
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="Mínimo 6 caracteres"
+                        value={modalPassword}
+                        onChange={(e) => setModalPassword(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isAuthenticating}
+                    className="w-full py-3 mt-2 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 disabled:opacity-50 text-white rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg hover:scale-[1.01]"
+                  >
+                    {isAuthenticating ? 'Criando Conta... 🚀' : 'Criar Minha Conta Grátis! 🚀'}
+                  </button>
+                </form>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setModalAuthError(null);
+                    handleEmailLogin(modalEmail, modalPassword);
+                  }}
+                  className="space-y-4 text-left"
+                >
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-400 uppercase tracking-widest mb-1 ml-0.5">
+                        E-mail
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="seuemail@exemplo.com"
+                        value={modalEmail}
+                        onChange={(e) => setModalEmail(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-400 uppercase tracking-widest mb-1 ml-0.5">
+                        Senha Secreta
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="Digite sua senha"
+                        value={modalPassword}
+                        onChange={(e) => setModalPassword(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isAuthenticating}
+                    className="w-full py-3 mt-2 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 disabled:opacity-50 text-white rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg hover:scale-[1.01]"
+                  >
+                    {isAuthenticating ? 'Entrando... 🔑' : 'Entrar no meu Perfil! 🔑'}
+                  </button>
+
+                  <div className="relative py-2 flex items-center justify-center">
+                    <span className="absolute bg-zinc-900 px-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">OU</span>
+                    <hr className="w-full border-white/5" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerAudio('tap');
+                      handleLogin();
+                    }}
+                    disabled={isAuthenticating}
+                    className="w-full py-3 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl font-sans font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center justify-center gap-2 border border-white/10"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-1.11 2.76-2.39 3.62v3h3.86c2.26-2.08 3.67-5.14 3.67-8.45z"/>
+                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.1A11.99 11.99 0 0 0 12 24z"/>
+                      <path fill="#FBBC05" d="M5.27 14.29a7.18 7.18 0 0 1 0-4.58V6.6H1.29a11.99 11.99 0 0 0 0 10.79l3.98-3.1z"/>
+                      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A11.99 11.99 0 0 0 1.29 6.6l3.98 3.1c.95-2.85 3.6-4.95 6.73-4.95z"/>
+                    </svg>
+                    Entrar com o Google
+                  </button>
+                </form>
+              )}
+
+              {/* Bottom Guest Option */}
+              <div className="border-t border-white/5 pt-4 space-y-2">
+                <p className="text-[10px] text-zinc-500 font-bold">
+                  Quer apenas dar uma olhadinha no portal antes?
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerAudio('success');
+                    sessionStorage.setItem('pkxd_continued_as_guest', 'true');
+                    setContinuedAsGuest(true);
+                  }}
+                  className="w-full py-2.5 bg-zinc-800/60 hover:bg-zinc-800 border border-white/5 hover:border-white/10 text-zinc-400 hover:text-zinc-200 font-sans text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer hover:scale-[1.01]"
+                >
+                  Continuar como Convidado 💬
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       
       {/* Premium ambient space backdrop glows */}
       <div className="absolute top-1/4 right-[10%] w-[500px] h-[500px] pointer-events-none select-none rounded-full" style={{ backgroundImage: 'radial-gradient(circle, var(--glow-1) 0%, transparent 70%)' }} />
