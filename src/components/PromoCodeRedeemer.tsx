@@ -237,60 +237,131 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
           </div>
         </div>
 
-        {/* IN-APP CODE REDEEMER FORM */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 shadow-inner">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Área de Resgate Direct-Glow 🎟️</h4>
-          </div>
+        {/* DUAL REDEEMER - SEPARATED SECTORS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
           
-          <p className="text-[11px] text-gray-300 font-sans leading-relaxed">
-            Tem um código de criador ou um código promocional ativo? Digite-o abaixo para receber instantaneamente suas Joias e Moedas em seu perfil! (Experimente os códigos iniciais de Boas-vindas: <strong className="text-amber-400">WELCOME</strong> ou <strong className="text-purple-400">1000GEMAS</strong>!)
-          </p>
-
-          <form onSubmit={handleRedeemCode} className="flex flex-col sm:flex-row gap-3">
-            <input 
-              type="text"
-              value={codeText}
-              onChange={(e) => setCodeText(e.target.value)}
-              placeholder="Digite o código aqui (Ex: 1000GEMAS)"
-              className="flex-1 bg-black/60 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-xs font-mono font-black uppercase tracking-widest text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 text-center sm:text-left"
-              disabled={isRedeeming}
-            />
-            <button
-              type="submit"
-              disabled={isRedeeming}
-              className="px-6 py-3 bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-800 text-black font-sans font-black text-xs uppercase rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-            >
-              {isRedeeming ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                  <span>PROCESSANDO...</span>
-                </>
-              ) : (
-                <>
-                  <Ticket className="w-3.5 h-3.5 fill-black" />
-                  <span>RESGATAR COIN/GEMA ⚡</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Feedback message */}
-          {redeemResult && (
-            <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs font-sans leading-relaxed transition-all ${
-              redeemResult.success 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-            }`}>
-              {redeemResult.success ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              ) : (
-                <ShieldAlert className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
-              )}
-              <span>{redeemResult.msg}</span>
+          {/* SECTOR 1: EXCLUSIVE SITE CODES */}
+          <div className="bg-gradient-to-br from-amber-500/10 via-zinc-900/80 to-zinc-950 border-2 border-amber-500/40 rounded-2xl p-6 space-y-4 shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full filter blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">
+                  CÓDIGOS EXCLUSIVOS DO SITE ⚡
+                </h4>
+              </div>
+              <span className="bg-amber-400/20 text-amber-300 text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-md border border-amber-400/30">
+                AQUI NO SITE
+              </span>
             </div>
-          )}
+            
+            <p className="text-[11px] text-gray-300 font-sans leading-relaxed">
+              Resgate cupons criados para <strong className="text-amber-400">receber Moedas 🪙 e Joias 💎 diretamente na sua conta DESTE SITE</strong> (usado para habilitar avatares exclusivos, interações e seu nível de fã na página).
+            </p>
+
+            <div className="text-[10px] bg-amber-500/10 border border-amber-500/25 p-2.5 rounded-xl text-amber-200 space-y-1">
+              <span className="font-extrabold uppercase block text-[11px]">🎟️ CÓDIGOS ATIVOS DO SITE:</span>
+              <p>• Experimente: <strong className="text-white underline">WELCOME</strong> (Dá 50 Gemas e 2000 Moedas)</p>
+              <p>• Código Secreto: <strong className="text-white underline">1000GEMAS</strong> (Dá 1000 Gemas gratuitas!)</p>
+            </div>
+
+            <form onSubmit={handleRedeemCode} className="flex flex-col gap-2.5 pt-1">
+              <input 
+                type="text"
+                value={codeText}
+                onChange={(e) => setCodeText(e.target.value)}
+                placeholder="Digite o código do site aqui (Ex: 1000GEMAS)"
+                className="w-full bg-black/60 border border-amber-500/30 rounded-xl px-4 py-3 text-xs font-mono font-black uppercase tracking-widest text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-400 text-center"
+                disabled={isRedeeming}
+              />
+              
+              <button
+                type="submit"
+                disabled={isRedeeming}
+                className="w-full py-3 bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-800 text-black font-sans font-black text-xs uppercase rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                {isRedeeming ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                    <span>VERIFICANDO NO SITE...</span>
+                  </>
+                ) : (
+                  <>
+                    <Ticket className="w-3.5 h-3.5 fill-black" />
+                    <span>RESGATAR MOEDA/GEMA DO SITE ⚡</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Feedback message */}
+            {redeemResult && (
+              <div className={`p-3 rounded-xl border flex items-start gap-2 text-xs font-sans leading-relaxed transition-all ${
+                redeemResult.success 
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
+                  : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+              }`}>
+                {redeemResult.success ? (
+                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <ShieldAlert className="w-4.5 h-4.5 text-rose-400 flex-shrink-0 mt-0.5" />
+                )}
+                <span>{redeemResult.msg}</span>
+              </div>
+            )}
+            
+            <p className="text-[10px] text-zinc-500 italic text-center leading-tight">
+              *Nota: Estes recursos são virtuais e válidos para a sua experiência neste site de fãs.
+            </p>
+          </div>
+
+          {/* SECTOR 2: OFFICIAL PK XD GAME CODES */}
+          <div className="bg-gradient-to-br from-indigo-500/15 via-zinc-900/80 to-zinc-950 border-2 border-indigo-500/40 rounded-2xl p-6 space-y-4 shadow-xl relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full filter blur-2xl pointer-events-none" />
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-2">
+                  <Play className="w-4 h-4 text-indigo-400 animate-pulse fill-indigo-400/40" />
+                  <h4 className="text-xs font-black uppercase text-indigo-400 tracking-wider">
+                    CÓDIGOS OFICIAIS DO JOGO PK XD 🎮
+                  </h4>
+                </div>
+                <span className="bg-indigo-400/20 text-indigo-300 text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-md border border-indigo-400/30">
+                  DENTRO DO JOGO REAL
+                </span>
+              </div>
+              
+              <p className="text-[11px] text-gray-300 font-sans leading-relaxed">
+                Tem um código oficial do jogo PK XD real liberado pelos Creators ou no Instagram oficial? 
+                Estes códigos dão <strong className="text-indigo-300">Moedas, Gemas, Armaduras e Itens raros na sua conta do Jogo PK XD Real</strong> criado pela Afterverse.
+              </p>
+
+              <div className="text-[10px] bg-indigo-950/40 border border-indigo-500/20 p-3 rounded-xl text-indigo-200 leading-relaxed space-y-2">
+                <span className="font-extrabold uppercase text-indigo-300 block text-[11px]">💡 COMO RESGATAR NO JOGO?</span>
+                <p>1. Clique no botão abaixo para abrir a página oficial de resgates do PK XD.</p>
+                <p>2. Faça login com a sua conta do jogo Afterverse.</p>
+                <p>3. Digite o código oficial para que ele caia diretamente no seu celular/jogo!</p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={handleRedeemClick}
+                className="w-full py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white font-sans font-black text-xs uppercase rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                <Ticket className="w-3.5 h-3.5 fill-white" />
+                <span>ABRIR RESGATES DO JOGO PK XD REAL 🎮</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+              
+              <span className="text-[9px] text-zinc-500 block text-center mt-2.5 font-mono">
+                Link Oficial: https://app.playpkxd.com/promo-code
+              </span>
+            </div>
+          </div>
+
         </div>
 
         {/* Info Card / Explainer */}
