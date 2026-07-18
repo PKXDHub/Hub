@@ -15,6 +15,7 @@ import ApplicationsSection from './components/ApplicationsSection';
 import SocialSection from './components/SocialSection';
 import MissionsSection from './components/MissionsSection';
 import AppleProfileHeader from './components/AppleProfileHeader';
+import ArtesSection from './components/ArtesSection';
 import { 
   Sparkles, 
   Settings, 
@@ -168,7 +169,7 @@ export default function App() {
     return false;
   });
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [activeTab, setActiveTab] = useState<'inicio' | 'comunidade' | 'missoes'>('inicio');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'comunidade' | 'missoes' | 'artes'>('inicio');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Fallback passcode login states
@@ -2376,6 +2377,21 @@ export default function App() {
                 <span>🎯</span>
                 <span>Missões</span>
               </button>
+
+              <button
+                onClick={() => {
+                  triggerAudio('tap');
+                  setActiveTab('artes');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-2xl font-sans text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  activeTab === 'artes'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md border-2 border-pink-400'
+                    : 'text-gray-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <span>🎨</span>
+                <span>Artes</span>
+              </button>
             </div>
 
             {activeTab === 'inicio' && (
@@ -2584,6 +2600,16 @@ export default function App() {
                     setFanXP={setFanXP}
                   />
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'artes' && (
+              <div className="max-w-4xl mx-auto animate-fade-in" id="artes-section-wrapper">
+                <ArtesSection 
+                  isAdmin={isAdmin}
+                  soundEnabled={soundEnabled}
+                  triggerAudio={triggerAudio}
+                />
               </div>
             )}
 

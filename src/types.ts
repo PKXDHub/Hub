@@ -117,3 +117,13 @@ export interface GeneratedPromoCode {
   createdAt: number;
   redeemedUsers: string[];
 }
+
+export interface ArtAsset {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  downloadUrl?: string;
+  category: string; // e.g. Renders, Logos, Fundos, Outros
+  createdAt: number;
+}

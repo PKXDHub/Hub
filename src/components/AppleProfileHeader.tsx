@@ -203,6 +203,22 @@ export default function AppleProfileHeader({
     setTimeout(() => setNotif(null), 4000);
   };
 
+  // Sync nickname and bio based on user login state
+  useEffect(() => {
+    if (!user) {
+      setNickname('Koosh');
+    } else {
+      const savedNickname = localStorage.getItem('pkxd_username_nickname');
+      if (savedNickname && savedNickname !== 'Koosh') {
+        setNickname(savedNickname);
+      } else if (user.displayName) {
+        setNickname(user.displayName.replace(/\s+/g, '_'));
+      } else {
+        setNickname(user.email?.split('@')[0] || 'Jogador_PK');
+      }
+    }
+  }, [user]);
+
   // Friends Sync Logic
   useEffect(() => {
     if (!user) {
@@ -699,10 +715,12 @@ export default function AppleProfileHeader({
                   {nickname}
                 </h2>
                 
-                {/* Official Certified Badge */}
-                <span className="inline-flex items-center justify-center bg-sky-500 text-white rounded-full text-[9px] font-black w-4.5 h-4.5 shadow-sm select-none" title="Fã Verificado Oficial">
-                  ✓
-                </span>
+                {/* Official Certified Badge - Only for Admin */}
+                {isAdmin && (
+                  <span className="inline-flex items-center justify-center bg-sky-500 text-white rounded-full text-[9px] font-black w-4.5 h-4.5 shadow-sm select-none" title="Fã Verificado Oficial">
+                    ✓
+                  </span>
+                )}
                 
                 <span className="text-xs font-semibold font-mono text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800/60 px-2 py-0.5 rounded-md">
                   #{nickname.toLowerCase()}
@@ -812,11 +830,21 @@ export default function AppleProfileHeader({
                     <input
                       type="text"
                       maxLength={15}
-                      value={editName}
+                      value={!user ? 'Koosh' : editName}
+                      disabled={!user}
                       onChange={(e) => setEditName(e.target.value)}
                       placeholder="Ex: Koosh"
-                      className="w-full rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 ${
+                        !user 
+                          ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed opacity-75 border border-white/5' 
+                          : 'bg-white dark:bg-neutral-900 text-neutral-800 dark:text-white border border-neutral-300 dark:border-neutral-700'
+                      }`}
                     />
+                    {!user && (
+                      <span className="text-[9px] text-amber-500 font-black uppercase tracking-wide block mt-1">
+                        ⚠️ Cadastre-se para mudar seu apelido!
+                      </span>
+                    )}
                   </div>
 
                   {/* Photo URL field */}
