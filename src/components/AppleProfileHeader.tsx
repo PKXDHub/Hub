@@ -48,7 +48,12 @@ export default function AppleProfileHeader({
 
   // Nickname, Bio and Instagram states
   const [nickname, setNickname] = useState(() => {
-    return localStorage.getItem('pkxd_username_nickname') || 'Koosh';
+    const saved = localStorage.getItem('pkxd_username_nickname');
+    if (saved) return saved;
+    const randomNum = String(Math.floor(10 + Math.random() * 980)).padStart(2, '0');
+    const guestName = `Convidado_${randomNum}`;
+    localStorage.setItem('pkxd_username_nickname', guestName);
+    return guestName;
   });
   const [bio, setBio] = useState(() => {
     return localStorage.getItem('pkxd_user_bio') || 'Olá 👋 (entendedores entenderam)';
@@ -65,11 +70,11 @@ export default function AppleProfileHeader({
   // Balance States (Nem todos terão 3 gemas - let's offer claiming)
   const [gems, setGems] = useState(() => {
     const saved = localStorage.getItem('pkxd_gems_count');
-    return saved ? parseInt(saved, 10) : 3058;
+    return saved ? parseInt(saved, 10) : 150;
   });
   const [coins, setCoins] = useState(() => {
     const saved = localStorage.getItem('pkxd_coins_count');
-    return saved ? parseInt(saved, 10) : 12500;
+    return saved ? parseInt(saved, 10) : 1000;
   });
 
   // Owned/Unlocked avatar IDs

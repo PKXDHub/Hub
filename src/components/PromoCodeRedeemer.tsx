@@ -57,7 +57,7 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
         }
 
         // Check duplicate redeems
-        const userId = auth.currentUser?.uid || localStorage.getItem('pkxd_username_nickname') || 'Koosh';
+        const userId = auth.currentUser?.uid || localStorage.getItem('pkxd_username_nickname') || 'Jogador_Convidado';
         const redeemedList = data.redeemedUsers || [];
         if (redeemedList.includes(userId)) {
           setRedeemResult({ 
@@ -92,7 +92,7 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
       const fallbacks: Record<string, { gems: number; coins: number }> = {
         'WELCOME': { gems: 50, coins: 2000 },
         'PKXD2026': { gems: 100, coins: 5000 },
-        'ROXOGLASS': { gems: 150, coins: 10000 },
+        '1000GEMAS': { gems: 1000, coins: 0 },
         'CENTRAL50': { gems: 50, coins: 3000 }
       };
 
@@ -245,7 +245,7 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
           </div>
           
           <p className="text-[11px] text-gray-300 font-sans leading-relaxed">
-            Tem um código de criador ou um código promocional ativo? Digite-o abaixo para receber instantaneamente suas Joias e Moedas em seu perfil! (Experimente os códigos iniciais de Boas-vindas: <strong className="text-amber-400">WELCOME</strong> ou <strong className="text-purple-400">ROXOGLASS</strong>!)
+            Tem um código de criador ou um código promocional ativo? Digite-o abaixo para receber instantaneamente suas Joias e Moedas em seu perfil! (Experimente os códigos iniciais de Boas-vindas: <strong className="text-amber-400">WELCOME</strong> ou <strong className="text-purple-400">1000GEMAS</strong>!)
           </p>
 
           <form onSubmit={handleRedeemCode} className="flex flex-col sm:flex-row gap-3">
@@ -253,7 +253,7 @@ export default function PromoCodeRedeemer({ videos, isAdmin, onDeleteVideo, onEd
               type="text"
               value={codeText}
               onChange={(e) => setCodeText(e.target.value)}
-              placeholder="Digite o código aqui (Ex: ROXOGLASS)"
+              placeholder="Digite o código aqui (Ex: 1000GEMAS)"
               className="flex-1 bg-black/60 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-xs font-mono font-black uppercase tracking-widest text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 text-center sm:text-left"
               disabled={isRedeeming}
             />

@@ -172,13 +172,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'inicio' | 'comunidade' | 'missoes' | 'artes'>('inicio');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthInitializing, setIsAuthInitializing] = useState(true);
-  const [continuedAsGuest, setContinuedAsGuest] = useState(() => {
-    try {
-      return sessionStorage.getItem('pkxd_continued_as_guest') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [continuedAsGuest, setContinuedAsGuest] = useState(false);
 
   // Entry login modal states
   const [modalAuthTab, setModalAuthTab] = useState<'register' | 'login'>('register');
@@ -1093,6 +1087,8 @@ export default function App() {
         localStorage.setItem('pkxd_fan_level', '1');
         localStorage.setItem('pkxd_fan_xp', '0');
         localStorage.setItem('pkxd_fire_streak', '1');
+        localStorage.setItem('pkxd_gems_count', '150');
+        localStorage.setItem('pkxd_coins_count', '1000');
         const randomNum = String(Math.floor(10 + Math.random() * 980)).padStart(2, '0');
         localStorage.setItem('pkxd_username_nickname', `Convidado_${randomNum}`);
         localStorage.removeItem('pkxd_user_instagram');

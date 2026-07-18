@@ -214,7 +214,7 @@ export default function ArtesSection({ isAdmin, triggerAudio, soundEnabled }: Ar
   // Categories list - dynamically includes any newly created categories by the admin
   const categories = React.useMemo(() => {
     const base = ["Todas", "Renders", "Logos", "Fundos", "Overlays", "Outros"];
-    const uniqueFromDb = Array.from(new Set(artes.map(a => a.category).filter(Boolean)));
+    const uniqueFromDb = Array.from(new Set(artes.map(a => a.category).filter(Boolean))) as string[];
     // Add any unique category from database that isn't in base
     const extra = uniqueFromDb.filter(c => !base.includes(c) && c !== "Todas" && c !== "CUSTOM");
     return [...base, ...extra];
