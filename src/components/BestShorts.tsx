@@ -43,7 +43,7 @@ export default function BestShorts({ shorts, isAdmin, onDelete, onNavigate }: Be
               Melhores Shorts da Semana ⚡
             </h3>
             <p className="font-sans text-xs text-cyan-200">
-              Vídeos curtos e explosivos selecionados com exclusividade pelo <strong className="text-pink-400">PKXD Hub</strong>!
+              Vídeos curtos e explosivos selecionados com exclusividade pelo <strong className="text-pink-400">PKXD Central</strong>!
             </p>
           </div>
         </div>

@@ -59,7 +59,7 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
               PAINEL DE DESTAQUES DA COMUNIDADE 🌟
             </h3>
             <p className="font-sans text-xs text-indigo-200">
-              Os melhores vídeos, gameplays e criações da nossa comunidade selecionados pelo <strong className="text-pink-400">PKXD Hub</strong>!
+              Os melhores vídeos, gameplays e criações da nossa comunidade selecionados pelo <strong className="text-pink-400">PKXD Central</strong>!
             </p>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                     }`}>
                       {video.title}
                     </h4>
-                    {video.author && video.author !== 'Staff PKXD Hub' && (
+                    {video.author && video.author !== 'Staff PKXD Central' && (
                       <p className={`text-[10px] font-black uppercase tracking-wider ${
                         isPainel ? 'text-yellow-400/90' : 'text-indigo-400'
                       }`}>

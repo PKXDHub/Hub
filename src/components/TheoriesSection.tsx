@@ -110,7 +110,7 @@ export default function TheoriesSection({ theories, isAdmin, currentUser, onLike
                 <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-pink-400 px-2.5 py-1 bg-pink-500/10 border border-pink-500/20 rounded-md">
-                      ✍️ {theory.author || 'PKXD Hub'}
+                      ✍️ {theory.author || 'PKXD Central'}
                     </span>
                     <span className="text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />

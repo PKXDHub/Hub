@@ -303,10 +303,10 @@ export default function App() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => {
-          console.log('PKXD Hub Service Worker registered successfully:', reg);
+          console.log('PKXD Central Service Worker registered successfully:', reg);
         })
         .catch((err) => {
-          console.error('PKXD Hub Service Worker registration failed:', err);
+          console.error('PKXD Central Service Worker registration failed:', err);
         });
     }
   }, []);
@@ -422,7 +422,7 @@ export default function App() {
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
       });
 
-      console.log('PKXD Hub subscription generated:', subscription);
+      console.log('PKXD Central subscription generated:', subscription);
 
       // Secure serialization using .toJSON() to prevent empty object bugs in some browsers
       const serializedSubscription = subscription.toJSON();
@@ -3306,7 +3306,7 @@ export default function App() {
                           subscribeUserToPush();
                         }, 200);
 
-                        const welcomeTitle = 'Portal PKXD Hub 🔔';
+                        const welcomeTitle = 'Portal PKXD Central 🔔';
                         const welcomeOptions = {
                           body: 'Notificações ativas com sucesso! Você receberá alertas de novos spoilers e códigos.',
                           icon: '/favicon.svg',

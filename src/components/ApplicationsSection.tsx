@@ -235,7 +235,7 @@ export default function ApplicationsSection({
     let payload: any = {
       id,
       submittedBy: user?.uid || 'anonymous',
-      submittedByEmail: user?.email || 'convidado@pkxdhub.com',
+      submittedByEmail: user?.email || 'convidado@pkxdcentral.com',
       createdAt: Date.now(),
       status: 'pending' // pending, approved, rejected
     };
@@ -304,7 +304,7 @@ export default function ApplicationsSection({
       triggerAudio('levelUp');
       setSubmitStatus({
         success: true,
-        message: 'Inscrição enviada com sucesso! Ela foi guardada na nuvem do PKXD Hub e nossa equipe vai analisar em breve! 🌟'
+        message: 'Inscrição enviada com sucesso! Ela foi guardada na nuvem do PKXD Central e nossa equipe vai analisar em breve! 🌟'
       });
       
       // Award XP
@@ -1094,7 +1094,7 @@ export default function ApplicationsSection({
                       🔐 Candidatura para Administrador (ADM)
                     </h3>
                     <p className="text-[11px] text-gray-400 font-sans leading-normal">
-                      Faça parte do time PKXD Hub! Ajude a registrar spoilers, organizar publicações e moderar nossa vibrante comunidade de fã-clube!
+                      Faça parte do time PKXD Central! Ajude a registrar spoilers, organizar publicações e moderar nossa vibrante comunidade de fã-clube!
                     </p>
                   </div>
 
@@ -1151,7 +1151,7 @@ export default function ApplicationsSection({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Por que você quer ser Admin do PKXD Hub? *</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Por que você quer ser Admin do PKXD Central? *</label>
                     <textarea
                       required
                       rows={4}

@@ -698,7 +698,7 @@ export default function FanLevelSection({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-orange-400 font-extrabold text-xs uppercase tracking-wider">
             <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-            <span>PKXD Hub • Sequência de Fogos</span>
+            <span>PKXD Central • Sequência de Fogos</span>
           </div>
           <h3 className="font-sans font-black text-2xl tracking-tight text-white uppercase">
             🔥 Central do Foguinho & XP Diário
@@ -1376,7 +1376,7 @@ export default function FanLevelSection({
                 ⭐ DINÂMICA COMPLETA: PRÊMIO TODO MÊS!
               </h5>
               <p className="font-sans text-[10px] text-zinc-300 leading-relaxed">
-                Atenção, fã-clube! <strong>O ranking de fãs virtual é atualizado e reiniciado todo início de mês</strong> de forma automática. O jogador que ficar em <strong>🥇 1º Lugar (Primeiro Lugar)</strong> no final do mês garantirá um prêmio físico ou digital exclusivo do PKXD Hub! Comece a subir de nível! 🚀
+                Atenção, fã-clube! <strong>O ranking de fãs virtual é atualizado e reiniciado todo início de mês</strong> de forma automática. O jogador que ficar em <strong>🥇 1º Lugar (Primeiro Lugar)</strong> no final do mês garantirá um prêmio físico ou digital exclusivo do PKXD Central! Comece a subir de nível! 🚀
               </p>
             </div>
 
@@ -1405,7 +1405,7 @@ export default function FanLevelSection({
 
                 <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-mono text-yellow-200">
                   <span className="font-black flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5" /> REALEZA DO PKXD HUB
+                    <Award className="w-3.5 h-3.5" /> REALEZA DO PKXD CENTRAL
                   </span>
                   <span className="bg-black/40 px-2 py-0.5 rounded-md text-gray-400 border border-white/5">
                     Exibido por mais 3 dias

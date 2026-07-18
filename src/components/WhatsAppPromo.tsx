@@ -88,7 +88,7 @@ export default function WhatsAppPromo({ channelUrl, onAddXP }: WhatsAppPromoProp
               </div>
               <div>
                 <h4 className="font-sans font-bold text-sm text-gray-100 flex items-center gap-1.5">
-                  PKXD Hub
+                  PKXD Central
                   <span className="bg-emerald-500 text-[9px] font-black tracking-wider text-black px-1.5 py-0.5 rounded-full flex items-center">
                     ✓
                   </span>
@@ -101,8 +101,8 @@ export default function WhatsAppPromo({ channelUrl, onAddXP }: WhatsAppPromoProp
             <div className="p-4 space-y-4 max-h-[220px] overflow-y-auto bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat bg-[size:180px]">
               
                {/* Message bubble 1 */}
-              <div className="bg-[#1f2c34] text-gray-250 p-3 rounded-2xl rounded-tl-sm max-w-[85%] text-xs shadow-md border-l-4 border-cyan-400">
-                <span className="text-cyan-400 font-extrabold text-[10px] block mb-1">📢 COMUNIDADE PKXD HUB</span>
+               <div className="bg-[#1f2c34] text-gray-250 p-3 rounded-2xl rounded-tl-sm max-w-[85%] text-xs shadow-md border-l-4 border-cyan-400">
+                <span className="text-cyan-400 font-extrabold text-[10px] block mb-1">📢 COMUNIDADE PKXD CENTRAL</span>
                 Fala galera de PK XD! 🕹️ Aqui postamos com total exclusividade os spoilers das novas atualizações e códigos ativos!
                 <span className="text-[9px] text-gray-400 text-right block mt-1.5">17:28</span>
               </div>

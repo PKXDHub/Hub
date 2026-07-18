@@ -136,7 +136,7 @@ export default function CommentsSection({
 
       if (finalStatus === 'pending_review') {
         // Comment was blocked and sent for admin review
-        setWarningMessage("⚠️ Seu comentário continha palavras proibidas/links suspeitos e foi enviado para REVISÃO do moderador antes de aparecer no Hub!");
+        setWarningMessage("⚠️ Seu comentário continha palavras proibidas/links suspeitos e foi enviado para REVISÃO do moderador antes de aparecer na Central!");
         if (onAddXP) {
           // Give minor XP but inform them about the rules
           onAddXP(5, 'Feedback Moderado 🛡️');
