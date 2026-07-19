@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award, Instagram, Lock } from 'lucide-react';
+import { Trophy, Flame, Star, Sparkles, CheckCircle2, User, Edit2, Check, Award, Instagram, Lock, Mail } from 'lucide-react';
 import { playTapSound, playSuccessSound, playLevelUpSound } from '../utils/audio';
 import { collection, doc, setDoc, getDoc, getDocs, onSnapshot, query, limit, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -44,6 +44,7 @@ interface RankedPlayer {
   instagram?: string;
   instagramPublic?: boolean;
   photoUrl?: string;
+  email?: string;
 }
 
 export default function FanLevelSection({ 
@@ -358,6 +359,7 @@ export default function FanLevelSection({
           // If completely new registered user, sync guest state so they don't lose progress on signup!
           const payload: any = {
             id: cleanedId,
+            email: user.email || '',
             name: nickname === 'Jogador_Convidado' ? (user.displayName || 'Jogador_Convidado') : nickname,
             level: Number(level) || 1,
             xp: Number(xp) || 0,
@@ -413,6 +415,7 @@ export default function FanLevelSection({
       try {
         const payload: any = {
           id: cleanedId,
+          email: user.email || '',
           name: nickname,
           level: Number(level) || 1,
           xp: Number(xp) || 0,
@@ -452,6 +455,7 @@ export default function FanLevelSection({
         if (data && data.id && !data.id.startsWith('u_')) {
           players.push({
             id: data.id,
+            email: data.email || '',
             name: data.name || 'Fã Secreto',
             level: Number(data.level) || 1,
             xp: Number(data.xp) || 0,
@@ -1506,6 +1510,13 @@ export default function FanLevelSection({
                                 <span>Privado</span>
                               </span>
                             )}
+                          </div>
+                        )}
+                        {/* Admin Email display block */}
+                        {isAdmin && player.email && (
+                          <div className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-sky-400 font-semibold font-mono mt-1 select-all" title="E-mail do fã (Visível apenas para Administradores)">
+                            <Mail className="w-3 h-3 text-sky-500 flex-shrink-0" />
+                            <span className="truncate max-w-[170px]">{player.email}</span>
                           </div>
                         )}
                       </div>

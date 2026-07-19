@@ -460,7 +460,7 @@ export default function App() {
         setUser(currentUser);
         if (currentUser.email) {
           const email = currentUser.email.toLowerCase();
-          if (email === 'kawanyuri35@gmail.com' || email === 'eukoosh@gmail.com') {
+          if (email === 'kawanyuri35@gmail.com' || email === 'eukoosh@gmail.com' || email === 'sg4924603@gmail.com') {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);

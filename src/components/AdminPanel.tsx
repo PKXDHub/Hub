@@ -1920,7 +1920,7 @@ export default function AdminPanel({
                             ⚠️ "ACESSO BLOQUEADO" ou "POPUP FECHADO" NO LOGIN?
                           </h5>
                           <p className="text-[11px] text-gray-300 mt-1 leading-relaxed">
-                            O Gmail é altamente protegido pelo Google. Para permitir a conexão do e-mail <strong>eukoosh@gmail.com</strong> ou <strong>kawanyuri35@gmail.com</strong> no seu app privado <code>{(firebaseConfig as any)?.authDomain || `${(firebaseConfig as any)?.projectId || 'pkxd-e817c'}.firebaseapp.com`}</code>, siga as instruções abaixo:
+                            O Gmail é altamente protegido pelo Google. Para permitir a conexão do e-mail <strong>eukoosh@gmail.com</strong>, <strong>kawanyuri35@gmail.com</strong> ou <strong>sg4924603@gmail.com</strong> no seu app privado <code>{(firebaseConfig as any)?.authDomain || `${(firebaseConfig as any)?.projectId || 'pkxd-e817c'}.firebaseapp.com`}</code>, siga as instruções abaixo:
                           </p>
                         </div>
                       </div>
@@ -1936,11 +1936,12 @@ export default function AdminPanel({
                           <strong className="text-pink-400">Passo 3:</strong> Abra o menu de navegação ☰ e vá em <strong className="text-emerald-400">APIs e Serviços</strong> &gt; <strong className="text-emerald-400">Tela de consentimento OAuth</strong>.
                         </p>
                         <p>
-                          <strong className="text-pink-400">Passo 4:</strong> Role até o painel de <strong className="text-white">Usuários de teste</strong> (Test Users), clique no botão <strong className="text-yellow-300">+ ADD USERS</strong> e insira ambos os e-mails:
+                          <strong className="text-pink-400">Passo 4:</strong> Role até o painel de <strong className="text-white">Usuários de teste</strong> (Test Users), clique no botão <strong className="text-yellow-300">+ ADD USERS</strong> e insira os e-mails:
                         </p>
                         <div className="bg-zinc-950 p-2 rounded-lg font-mono text-[9.5px] border border-white/10 text-cyan-300 select-all space-y-0.5">
                           <div>kawanyuri35@gmail.com</div>
                           <div>eukoosh@gmail.com</div>
+                          <div>sg4924603@gmail.com</div>
                         </div>
                         <p>
                           <strong className="text-pink-400">Passo 5:</strong> Clique em <strong className="text-white">Salvar / Confirmar</strong>. Prontinho! O Google vai habilitar o login de vocês. Ao clicar em Conectar acima, basta prosseguir clicando no link <strong className="text-yellow-300">"Configurações Avançadas" &gt; "Acessar (não seguro)"</strong> no alerta do Google.

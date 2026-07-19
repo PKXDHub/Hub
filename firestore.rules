@@ -2,84 +2,244 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global permissive rules to guarantee seamless client interactions
-    // and prevent any "Missing or insufficient permissions" errors for both 
-    // Google-authenticated and passkey-authenticated community members/administrators.
+    // =========================
+    // Helper functions
+    // =========================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Bootstrapped Admin
+    function isEmailAdmin() {
+      return request.auth != null
+        && request.auth.token != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email == "kawanyuri35@gmail.com" ||
+          request.auth.token.email == "eukoosh@gmail.com" ||
+          request.auth.token.email == "sg4924603@gmail.com"
+        );
+    }
+
+    function isAdmin() {
+      return isEmailAdmin()
+        || (
+          request.resource != null &&
+          request.resource.data != null &&
+          "admin_secret" in request.resource.data &&
+          request.resource.data.admin_secret == "pkxd2026_super_secret_admin_key"
+        );
+    }
+
+    function isDeletable() {
+      return isEmailAdmin()
+        || (
+          resource != null &&
+          resource.data != null &&
+          "admin_secret" in resource.data &&
+          resource.data.admin_secret == "pkxd2026_super_secret_admin_key"
+        );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Context-Aware helper to prevent errors during creates
+    function existing() {
+      return resource.data;
+    }
+
+    // =========================
+    // News
+    // =========================
 
     match /news/{newsId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Settings
+    // =========================
 
     match /settings/{settingsId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Past Spoilers
+    // =========================
 
     match /past_spoilers/{spoilerId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if isAdmin();
+
+      allow update: if isAdmin()
+        || incoming().diff(existing()).affectedKeys().hasOnly([
+          'ratingSum',
+          'ratingCount'
+        ])
+        || incoming().diff(existing()).affectedKeys().hasOnly([
+          'reactions'
+        ]);
+
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Featured Videos
+    // =========================
 
     match /featured_videos/{videoId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Theories
+    // =========================
 
     match /theories/{theoryId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if isAdmin();
+
+      allow update: if isAdmin()
+        || (
+          incoming().diff(existing()).affectedKeys().hasOnly(['likes']) &&
+          incoming().likes == existing().likes + 1
+        );
+
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Shorts
+    // =========================
 
     match /shorts/{shortId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Notifications
+    // =========================
 
     match /notifications/{notifId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isDeletable();
     }
+
+    // =========================
+    // Leaderboard
+    // =========================
 
     match /leaderboard/{playerId} {
-      allow read, write: if true;
+      allow read: if true;
+
+      allow create, update: if (
+        isSignedIn() &&
+        request.auth.uid == playerId
+      ) || isAdmin();
+
+      allow delete: if isDeletable();
     }
 
+    // =========================
+    // Applications
+    // =========================
+
     match /applications_panel/{appId} {
-      allow read, write: if true;
+      allow read, delete: if isAdmin();
+      allow create, update: if true;
     }
 
     match /applications_shorts/{appId} {
-      allow read, write: if true;
+      allow read, delete: if isAdmin();
+      allow create, update: if true;
     }
 
     match /applications_theories/{appId} {
-      allow read, write: if true;
+      allow read, delete: if isAdmin();
+      allow create, update: if true;
     }
 
     match /applications_admin/{appId} {
-      allow read, write: if true;
+      allow read, delete: if isAdmin();
+      allow create, update: if true;
     }
+
+    // =========================
+    // Comments
+    // =========================
 
     match /comments/{commentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isDeletable();
     }
-
+    
+    // =========================
+    // Rede Social / Feed de Posts
+    // =========================
     match /posts/{postId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isDeletable() || (isSignedIn() && resource.data.authorId == request.auth.uid);
     }
 
+    // =========================
+    // Fan-art Assets
+    // =========================
     match /art_assets/{artId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isDeletable();
     }
 
+    // =========================
+    // Custom Avatars
+    // =========================
     match /custom_avatars/{avatarId} {
       allow read, write: if true;
     }
 
+    // =========================
+    // Generated Promo Codes
+    // =========================
     match /generated_promo_codes/{codeId} {
       allow read, write: if true;
     }
 
+    // =========================
+    // Promo Codes
+    // =========================
     match /promo_codes/{codeId} {
       allow read, write: if true;
     }
 
+    // =========================
+    // Friendships
+    // =========================
     match /friendships/{friendshipId} {
       allow read, write: if true;
+    }
+
+    // =========================
+    // Default
+    // =========================
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
