@@ -771,7 +771,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push({ id: doc.id, ...doc.data() } as AppNotification);
       });
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => {
+        const timeA = a.createdAt || parseInt(a.id) || 0;
+        const timeB = b.createdAt || parseInt(b.id) || 0;
+        return timeB - timeA;
+      });
       setNotificationList(list);
 
       if (isFirstLoadRef.current) {
@@ -917,7 +921,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push({ id: doc.id, ...doc.data() } as FeaturedVideo);
       });
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => {
+        const timeA = a.createdAt || parseInt(a.id) || 0;
+        const timeB = b.createdAt || parseInt(b.id) || 0;
+        return timeB - timeA;
+      });
       setFeaturedList(list);
     }, (error) => {
       console.warn("Could not fetch featured videos:", error);
@@ -933,7 +941,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push({ id: doc.id, ...doc.data() } as Theory);
       });
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => {
+        const timeA = a.createdAt || parseInt(a.id) || 0;
+        const timeB = b.createdAt || parseInt(b.id) || 0;
+        return timeB - timeA;
+      });
       setTheoriesList(list);
     }, (error) => {
       console.warn("Could not fetch theories:", error);
@@ -949,7 +961,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push({ id: doc.id, ...doc.data() } as ShortItem);
       });
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => {
+        const timeA = a.createdAt || parseInt(a.id) || 0;
+        const timeB = b.createdAt || parseInt(b.id) || 0;
+        return timeB - timeA;
+      });
       setShortsList(list);
     }, (error) => {
       console.warn("Could not fetch shorts:", error);
@@ -965,7 +981,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push({ id: doc.id, ...doc.data() } as PastSpoiler);
       });
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => {
+        const timeA = a.createdAt || parseInt(a.id) || 0;
+        const timeB = b.createdAt || parseInt(b.id) || 0;
+        return timeB - timeA;
+      });
       setPastSpoilers(list);
     }, (error) => {
       console.warn("Could not fetch past spoilers:", error);

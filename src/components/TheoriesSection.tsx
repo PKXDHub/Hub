@@ -114,7 +114,9 @@ export default function TheoriesSection({ theories, isAdmin, currentUser, onLike
                     </span>
                     <span className="text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {new Date(theory.createdAt).toLocaleDateString('pt-BR')}
+                      {theory.createdAt && !isNaN(new Date(theory.createdAt).getTime())
+                        ? new Date(theory.createdAt).toLocaleDateString('pt-BR')
+                        : 'Sem Data'}
                     </span>
                   </div>
                   {isAdmin && (

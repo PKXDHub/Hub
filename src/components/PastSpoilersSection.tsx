@@ -295,11 +295,14 @@ export default function PastSpoilersSection({ spoilers, isAdmin, onDelete, onEdi
         /* Compact collection grids: perfect spacing and sleek visual sizes */
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {spoilers.map((spoil) => {
-          const formattedDate = new Date(spoil.createdAt).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
+          const isDateValid = spoil.createdAt && !isNaN(new Date(spoil.createdAt).getTime());
+          const formattedDate = isDateValid
+            ? new Date(spoil.createdAt).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              })
+            : 'Sem Data';
 
           const snippet = getPlainSnippet(spoil.description);
           const firstImgUrl = getFirstImageFromDescription(spoil.description) || spoil.imageUrl;
@@ -503,9 +506,11 @@ export default function PastSpoilersSection({ spoilers, isAdmin, onDelete, onEdi
                 <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
                   <Calendar className="w-4 h-4 text-pink-400" />
                   <span>
-                    Publicado em {new Date(immersiveSpoiler.createdAt).toLocaleString('pt-BR', {
-                      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                    })}
+                    Publicado em {immersiveSpoiler.createdAt && !isNaN(new Date(immersiveSpoiler.createdAt).getTime())
+                      ? new Date(immersiveSpoiler.createdAt).toLocaleString('pt-BR', {
+                          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })
+                      : 'Sem Data'}
                   </span>
                 </div>
                 <h3 className="font-sans font-black text-xl sm:text-2xl text-yellow-400 leading-tight">

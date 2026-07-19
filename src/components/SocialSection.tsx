@@ -434,7 +434,9 @@ export default function SocialSection({
                           </div>
                           
                           <div className="text-[10px] text-neutral-400 font-sans">
-                            <span>{new Date(post.createdAt).toLocaleDateString('pt-BR')} às {new Date(post.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{post.createdAt && !isNaN(new Date(post.createdAt).getTime())
+                              ? `${new Date(post.createdAt).toLocaleDateString('pt-BR')} às ${new Date(post.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Sem Data'}</span>
                           </div>
                         </div>
                       </div>
@@ -707,7 +709,9 @@ export default function SocialSection({
                     profilePosts.map((pp) => (
                       <div key={pp.id} className="p-3 bg-zinc-950/75 border border-white/5 rounded-xl space-y-1">
                         <p className="text-xs text-gray-200 line-clamp-2 leading-relaxed">{pp.content}</p>
-                        <span className="block text-[9px] text-gray-500 font-mono">{new Date(pp.createdAt).toLocaleDateString('pt-BR')}</span>
+                        <span className="block text-[9px] text-gray-500 font-mono">{pp.createdAt && !isNaN(new Date(pp.createdAt).getTime())
+                          ? new Date(pp.createdAt).toLocaleDateString('pt-BR')
+                          : 'Sem Data'}</span>
                       </div>
                     ))
                   )}

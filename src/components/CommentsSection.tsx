@@ -301,7 +301,9 @@ export default function CommentsSection({
 
                     <div className="flex items-center gap-1.5 font-mono text-[9px] text-gray-500">
                       <Clock className="w-2.5 h-2.5" />
-                      <span>{new Date(comment.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <span>{comment.createdAt && !isNaN(new Date(comment.createdAt).getTime())
+                        ? new Date(comment.createdAt).toLocaleDateString('pt-BR')
+                        : 'Sem Data'}</span>
                       {isAdmin && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}

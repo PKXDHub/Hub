@@ -184,7 +184,9 @@ export default function FeaturedVideos({ videos, isAdmin, currentUser, onDelete,
                     </span>
 
                     <span className="text-[10px] text-gray-500 font-mono">
-                      {new Date(video.createdAt).toLocaleDateString('pt-BR')}
+                      {video.createdAt && !isNaN(new Date(video.createdAt).getTime())
+                        ? new Date(video.createdAt).toLocaleDateString('pt-BR')
+                        : 'Sem Data'}
                     </span>
                   </div>
 
