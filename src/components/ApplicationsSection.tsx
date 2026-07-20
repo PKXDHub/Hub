@@ -921,6 +921,18 @@ export default function ApplicationsSection({
               </div>
             )}
 
+            {!user?.email && (
+              <div className="p-4 rounded-2xl mb-6 flex items-start gap-3 border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400" />
+                <div className="space-y-1">
+                  <p className="font-sans text-xs font-bold leading-normal">Você está enviando como Visitante</p>
+                  <p className="font-sans text-[11px] text-gray-400 leading-normal">
+                    Para que seu e-mail fique salvo na nuvem e você receba os bônus de XP diretamente na sua conta de Fã, por favor faça login na aba <strong className="text-amber-300 font-bold">Nível de Fã 👑</strong> antes de enviar sua inscrição!
+                  </p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               
               {activeTab === 'panel' && (

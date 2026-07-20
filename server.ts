@@ -172,6 +172,27 @@ app.post("/api/send-push", async (req, res) => {
   }
 });
 
+// Secure backend helper to delete documents bypassing Firebase client-side security rules for PIN admins
+app.post("/api/admin-delete", async (req, res) => {
+  const { collectionName, docId, admin_secret } = req.body;
+  if (admin_secret !== "pkxd2026_super_secret_admin_key") {
+    res.status(401).json({ error: "Acesso administrativo negado." });
+    return;
+  }
+  if (!collectionName || !docId) {
+    res.status(400).json({ error: "Parâmetros collectionName e docId são obrigatórios." });
+    return;
+  }
+  try {
+    console.log(`[Admin DB] Deletando documento ${docId} da coleção ${collectionName}`);
+    await adminDb.collection(collectionName).doc(docId).delete();
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error("[Admin DB] Erro ao deletar documento:", err);
+    res.status(500).json({ error: err.message || "Erro interno ao deletar" });
+  }
+});
+
 // Lazy-initialize Gemini SDK to be resilient if key is missing on startup
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {

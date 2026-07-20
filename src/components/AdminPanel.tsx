@@ -201,6 +201,27 @@ export default function AdminPanel({
   onUpdateGiftCountdown
 }: AdminPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const deleteDocSecurely = async (collectionName: string, docId: string) => {
+    try {
+      const res = await fetch('/api/admin-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          collectionName,
+          docId,
+          admin_secret: 'pkxd2026_super_secret_admin_key'
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP error ${res.status}`);
+      }
+    } catch (err: any) {
+      console.warn(`Fallback local deleteDoc due to:`, err);
+      // Fallback to client-side deleteDoc if API is unavailable
+      await deleteDoc(doc(db, collectionName, docId));
+    }
+  };
   const [activeTab, setActiveTab] = useState<TabType>('news');
   const [activeCategory, setActiveCategory] = useState<'content' | 'timers' | 'community' | 'design'>('content');
 
@@ -544,7 +565,7 @@ export default function AdminPanel({
     }
   };
 
-  const handleLocalPasteImport = () => {
+  const handleLocalPasteImport = async () => {
     if (!localPasteContent.trim()) {
       setLocalImportStatus('⚠️ Por favor, cole o conteúdo (texto ou HTML) do e-mail de spoiler.');
       return;
@@ -577,8 +598,15 @@ export default function AdminPanel({
         // Try to find image URLs
         const imgs = doc.getElementsByTagName('img');
         if (imgs.length > 0) {
-          const firstImgSrc = imgs[0].src || imgs[0].getAttribute('src') || '';
+          let firstImgSrc = imgs[0].src || imgs[0].getAttribute('src') || '';
           if (firstImgSrc && !firstImgSrc.startsWith('cid:')) {
+            if (firstImgSrc.startsWith('data:image/')) {
+              try {
+                firstImgSrc = await compressBase64Image(firstImgSrc, 900, 0.72);
+              } catch (e) {
+                console.warn("Failed to compress pasted base64 image:", e);
+              }
+            }
             setExpressImage(firstImgSrc);
             setSpoilerImage(firstImgSrc);
           }
@@ -764,6 +792,56 @@ export default function AdminPanel({
     }
   };
 
+  const compressBase64Image = (base64Str: string, maxDimension = 900, quality = 0.72): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64Str || !base64Str.startsWith('data:image/')) {
+        resolve(base64Str);
+        return;
+      }
+      if (base64Str.length < 25000) {
+        resolve(base64Str);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } else {
+            resolve(base64Str);
+          }
+        } catch (err) {
+          console.warn("Compression failed, using original", err);
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  };
+
   const fetchAttachmentData = async (messageId: string, attachmentId: string, mimeType: string, token: string): Promise<string | null> => {
     try {
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`;
@@ -794,10 +872,15 @@ export default function AdminPanel({
       const usedCids = new Set<string>();
 
       if (mail.attachments && mail.attachments.length > 0) {
-        showStatus(`📥 Baixando ${mail.attachments.length} imagens anexas e incorporadas de alta resolução...`);
+        showStatus(`📥 Baixando e comprimindo ${mail.attachments.length} imagens anexas e incorporadas para salvar na nuvem sem erro...`);
         const fetchPromises = mail.attachments.map(async (att: any) => {
-          const base64Data = await fetchAttachmentData(mail.id, att.attachmentId, att.mimeType, gmailToken);
+          let base64Data = await fetchAttachmentData(mail.id, att.attachmentId, att.mimeType, gmailToken);
           if (base64Data) {
+            try {
+              base64Data = await compressBase64Image(base64Data, 900, 0.72);
+            } catch (compressErr) {
+              console.warn("Failed compressing imported image, using original:", compressErr);
+            }
             imageMap[att.attachmentId] = base64Data;
             if (att.contentId) {
               imageMap[att.contentId] = base64Data;
@@ -3090,6 +3173,13 @@ export default function AdminPanel({
                               <span className="text-[10px] uppercase font-bold text-gray-400 block font-mono">Descrição/Apresentação:</span>
                               <p className="text-xs text-gray-300 bg-zinc-950/50 p-2.5 rounded-lg leading-relaxed">{item.description}</p>
                             </div>
+                            
+                            {/* Account Email display */}
+                            <div className="text-[10px] text-gray-400 font-mono flex items-center gap-1.5 bg-zinc-950/35 p-2 rounded-lg border border-white/5">
+                              <span className="font-bold uppercase text-zinc-500 font-mono text-[9px]">Conta Envio:</span>
+                              <span className="text-pink-400 font-semibold">{item.submittedByEmail || 'convidado@pkxdcentral.com'}</span>
+                            </div>
+
                             <div className="flex flex-wrap items-center gap-2 justify-end pt-1.5 border-t border-white/5">
                               <button
                                 type="button"
@@ -3102,7 +3192,7 @@ export default function AdminPanel({
                                       type: 'game_highlight',
                                       author: item.creator
                                     });
-                                    await deleteDoc(doc(db, 'applications_panel', item.id));
+                                    await deleteDocSecurely('applications_panel', item.id);
                                     showStatus('Vídeo aprovado no Painel de Criadores! 🌟');
                                     playSuccessSound();
                                     fetchAllApplications();
@@ -3126,7 +3216,7 @@ export default function AdminPanel({
                                       type: 'panel_video',
                                       author: item.creator
                                     });
-                                    await deleteDoc(doc(db, 'applications_panel', item.id));
+                                    await deleteDocSecurely('applications_panel', item.id);
                                     showStatus('Vídeo aprovado na Comunidade! 👥');
                                     playSuccessSound();
                                     fetchAllApplications();
@@ -3145,7 +3235,7 @@ export default function AdminPanel({
                                   playTapSound();
                                   if (confirm('Deseja excluir esta inscrição permanentemente?')) {
                                     try {
-                                      await deleteDoc(doc(db, 'applications_panel', item.id));
+                                      await deleteDocSecurely('applications_panel', item.id);
                                       showStatus('Inscrição excluída.');
                                       fetchAllApplications();
                                     } catch (err: any) {
@@ -3188,6 +3278,13 @@ export default function AdminPanel({
                                 {item.url} <ExternalLink className="w-3 h-3" />
                               </a>
                             </div>
+
+                            {/* Account Email display */}
+                            <div className="text-[10px] text-gray-400 font-mono flex items-center gap-1.5 bg-zinc-950/35 p-2 rounded-lg border border-white/5">
+                              <span className="font-bold uppercase text-zinc-500 font-mono text-[9px]">Conta Envio:</span>
+                              <span className="text-pink-400 font-semibold">{item.submittedByEmail || 'convidado@pkxdcentral.com'}</span>
+                            </div>
+
                             <div className="flex items-center gap-2 justify-end pt-1.5 border-t border-white/5">
                               <button
                                 type="button"
@@ -3198,7 +3295,7 @@ export default function AdminPanel({
                                       title: item.title,
                                       youtubeUrl: item.url
                                     });
-                                    await deleteDoc(doc(db, 'applications_shorts', item.id));
+                                    await deleteDocSecurely('applications_shorts', item.id);
                                     showStatus('Short de destaque aprovado e publicado com sucesso! 📱');
                                     playSuccessSound();
                                     fetchAllApplications();
@@ -3217,7 +3314,7 @@ export default function AdminPanel({
                                   playTapSound();
                                   if (confirm('Deseja excluir esta inscrição?')) {
                                     try {
-                                      await deleteDoc(doc(db, 'applications_shorts', item.id));
+                                      await deleteDocSecurely('applications_shorts', item.id);
                                       showStatus('Inscrição excluída.');
                                       fetchAllApplications();
                                     } catch (err: any) {
@@ -3258,6 +3355,13 @@ export default function AdminPanel({
                               <span className="text-[10px] uppercase font-bold text-gray-400 block font-mono">Conteúdo da Teoria:</span>
                               <p className="text-xs text-gray-300 bg-zinc-950/50 p-2.5 rounded-lg leading-relaxed whitespace-pre-wrap">{item.content}</p>
                             </div>
+
+                            {/* Account Email display */}
+                            <div className="text-[10px] text-gray-400 font-mono flex items-center gap-1.5 bg-zinc-950/35 p-2 rounded-lg border border-white/5">
+                              <span className="font-bold uppercase text-zinc-500 font-mono text-[9px]">Conta Envio:</span>
+                              <span className="text-pink-400 font-semibold">{item.submittedByEmail || 'convidado@pkxdcentral.com'}</span>
+                            </div>
+
                             <div className="flex items-center gap-2 justify-end pt-1.5 border-t border-white/5">
                               <button
                                 type="button"
@@ -3269,7 +3373,7 @@ export default function AdminPanel({
                                       content: item.content,
                                       author: item.author
                                     });
-                                    await deleteDoc(doc(db, 'applications_theories', item.id));
+                                    await deleteDocSecurely('applications_theories', item.id);
                                     showStatus('Teoria aprovada e publicada com sucesso! 🔮');
                                     playSuccessSound();
                                     fetchAllApplications();
@@ -3288,7 +3392,7 @@ export default function AdminPanel({
                                   playTapSound();
                                   if (confirm('Deseja excluir esta teoria?')) {
                                     try {
-                                      await deleteDoc(doc(db, 'applications_theories', item.id));
+                                      await deleteDocSecurely('applications_theories', item.id);
                                       showStatus('Teoria excluída.');
                                       fetchAllApplications();
                                     } catch (err: any) {
@@ -3321,7 +3425,7 @@ export default function AdminPanel({
                       <div className="grid grid-cols-1 gap-3.5">
                         {appsAdmin.map((item) => (
                           <div key={item.id} className="bg-black/40 border border-zinc-850 p-4 rounded-xl space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                               <div>
                                 <span className="text-[10px] uppercase font-bold text-gray-450 block font-mono">Nome / Nick:</span>
                                 <strong className="text-yellow-300 font-bold">{item.name}</strong>
@@ -3333,6 +3437,10 @@ export default function AdminPanel({
                               <div>
                                 <span className="text-[10px] uppercase font-bold text-gray-450 block font-mono">Contato:</span>
                                 <span className="text-cyan-400 font-semibold">{item.contact}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase font-bold text-gray-450 block font-mono font-sans text-pink-400">E-mail da Conta:</span>
+                                <span className="text-pink-400 font-semibold font-mono">{item.submittedByEmail || 'convidado@pkxdcentral.com'}</span>
                               </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -3362,7 +3470,7 @@ export default function AdminPanel({
                                   playTapSound();
                                   if (confirm('Deseja excluir esta candidatura?')) {
                                     try {
-                                      await deleteDoc(doc(db, 'applications_admin', item.id));
+                                      await deleteDocSecurely('applications_admin', item.id);
                                       showStatus('Candidatura excluída.');
                                       fetchAllApplications();
                                     } catch (err: any) {
@@ -3550,7 +3658,7 @@ export default function AdminPanel({
                                   try {
                                     playTapSound();
                                     if (confirm('Deseja excluir permanentemente este comentário?')) {
-                                      await deleteDoc(doc(db, 'comments', comment.id));
+                                      await deleteDocSecurely('comments', comment.id);
                                       showStatus('Comentário excluído da base de dados! 🗑️');
                                     }
                                   } catch (err: any) {
@@ -3718,7 +3826,7 @@ export default function AdminPanel({
                                     try {
                                       playTapSound();
                                       if (confirm(`Deseja deletar e excluir permanentemente o cupom ${code.code}?`)) {
-                                        await deleteDoc(doc(db, 'promo_codes', code.code));
+                                        await deleteDocSecurely('promo_codes', code.code);
                                         showStatus(`Cupom ${code.code} deletado! 🗑/` + `️`);
                                       }
                                     } catch (err: any) {

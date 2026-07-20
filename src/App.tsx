@@ -543,6 +543,66 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Ensure authenticated user profile and email are ALWAYS successfully synced to Firestore cloud database
+  useEffect(() => {
+    const ensureUserProfileSynced = async () => {
+      if (!user || user.uid === 'guest' || user.uid === 'guest_temp') return;
+      
+      const cleanedId = user.uid.trim();
+      if (!cleanedId) return;
+
+      const userDocRef = doc(db, 'leaderboard', cleanedId);
+      try {
+        // Read current progress from localStorage as fallback/initial values
+        let currentLevel = 1;
+        let currentXp = 0;
+        let currentFlames = 1;
+        let currentInstagram = '';
+        let currentInstagramPublic = true;
+        
+        try {
+          currentLevel = Number(localStorage.getItem('pkxd_fan_level')) || 1;
+          currentXp = Number(localStorage.getItem('pkxd_fan_xp')) || 0;
+          currentFlames = Number(localStorage.getItem('pkxd_fire_streak')) || 1;
+          currentInstagram = localStorage.getItem('pkxd_user_instagram') || '';
+          currentInstagramPublic = localStorage.getItem('pkxd_user_instagram_public') !== 'false';
+        } catch (e) {}
+
+        const payload: any = {
+          id: cleanedId,
+          email: user.email || '',
+          name: user.displayName || localStorage.getItem('pkxd_username_nickname') || 'Fã Secreto',
+          level: currentLevel,
+          xp: currentXp,
+          flames: currentFlames,
+          instagram: currentInstagram,
+          instagramPublic: currentInstagramPublic,
+          photoUrl: user.photoURL || '',
+          updatedAt: Date.now()
+        };
+
+        if (cleanedId === 'admin_fallback') {
+          payload.admin_secret = "pkxd2026_super_secret_admin_key";
+        }
+
+        // We use setDoc with merge to ensure we don't overwrite any newer XP/level progress
+        // if they already have one in Firestore, but we always write their email and ID!
+        await setDoc(userDocRef, {
+          id: cleanedId,
+          email: user.email || '',
+          name: payload.name,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        console.log("Successfully ensured user profile and email are synced to cloud:", user.email);
+      } catch (err) {
+        console.warn("Could not ensure cloud user file is synchronized:", err);
+      }
+    };
+
+    ensureUserProfileSynced();
+  }, [user]);
+
   // Capture Google login Redirect results (Resolves popup-closed errors on mobile)
   useEffect(() => {
     getRedirectResult(auth)
@@ -1261,15 +1321,98 @@ export default function App() {
     }
   };
 
+  // Helper to compress a single base64 image on the client side
+  const compressBase64Image = (base64Str: string, maxDimension = 900, quality = 0.72): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64Str || !base64Str.startsWith('data:image/')) {
+        resolve(base64Str);
+        return;
+      }
+      if (base64Str.length < 25000) {
+        resolve(base64Str);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } else {
+            resolve(base64Str);
+          }
+        } catch (err) {
+          console.warn("Compression failed, using original", err);
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  };
+
+  // Helper to scan a text block (like description markdown) and compress any embedded base64 images
+  const compressAllBase64InText = async (text: string): Promise<string> => {
+    if (!text || !text.includes('data:image/')) return text;
+    const regex = /data:image\/[a-zA-Z+.-]+;base64,[a-zA-Z0-9+/=]+/g;
+    const matches = text.match(regex);
+    if (!matches) return text;
+
+    let result = text;
+    const uniqueMatches = Array.from(new Set(matches));
+    for (const match of uniqueMatches) {
+      try {
+        if (match.length > 30000) { // Only compress if over ~30KB
+          const compressed = await compressBase64Image(match, 900, 0.72);
+          result = result.split(match).join(compressed);
+        }
+      } catch (err) {
+        console.warn("Failed to compress embedded base64:", err);
+      }
+    }
+    return result;
+  };
+
   // Update spoiler settings and add to history
   const handleUpdateSpoilerSettings = async (title: string, desc: string, imageUrl?: string, forceRevealActive: boolean = false) => {
     if (!checkAdminWritePermission()) return;
     try {
+      let finalDesc = desc;
+      let finalImageUrl = imageUrl || '';
+
+      if (finalDesc.includes('data:image/')) {
+        finalDesc = await compressAllBase64InText(finalDesc);
+      }
+      if (finalImageUrl.startsWith('data:image/')) {
+        finalImageUrl = await compressBase64Image(finalImageUrl, 900, 0.72);
+      }
+
       const docRef = doc(db, 'settings', 'app');
       await setDoc(docRef, {
         spoilerTitle: title,
-        spoilerDesc: desc,
-        spoilerImageUrl: imageUrl || '',
+        spoilerDesc: finalDesc,
+        spoilerImageUrl: finalImageUrl,
         forceReveal: forceRevealActive,
         revealedAt: Date.now(),
         admin_secret: "pkxd2026_super_secret_admin_key"
@@ -1281,8 +1424,8 @@ export default function App() {
       await setDoc(pastRef, {
         id: pastId,
         title,
-        description: desc,
-        imageUrl: imageUrl || '',
+        description: finalDesc,
+        imageUrl: finalImageUrl,
         createdAt: Date.now(),
         admin_secret: "pkxd2026_super_secret_admin_key"
       });
@@ -1328,13 +1471,23 @@ export default function App() {
   const handleDirectArchivePastSpoiler = async (title: string, desc: string, imageUrl?: string) => {
     if (!checkAdminWritePermission()) return;
     try {
+      let finalDesc = desc;
+      let finalImageUrl = imageUrl || '';
+
+      if (finalDesc.includes('data:image/')) {
+        finalDesc = await compressAllBase64InText(finalDesc);
+      }
+      if (finalImageUrl.startsWith('data:image/')) {
+        finalImageUrl = await compressBase64Image(finalImageUrl, 900, 0.72);
+      }
+
       const pastId = Date.now().toString();
       const pastRef = doc(db, 'past_spoilers', pastId);
       await setDoc(pastRef, {
         id: pastId,
         title,
-        description: desc,
-        imageUrl: imageUrl || '',
+        description: finalDesc,
+        imageUrl: finalImageUrl,
         createdAt: Date.now(),
         admin_secret: "pkxd2026_super_secret_admin_key"
       });
@@ -1538,12 +1691,22 @@ export default function App() {
   const handleSaveEditPastSpoiler = async (id: string, title: string, desc: string, imageUrl?: string) => {
     if (!checkAdminWritePermission()) return;
     try {
+      let finalDesc = desc;
+      let finalImageUrl = imageUrl || '';
+
+      if (finalDesc.includes('data:image/')) {
+        finalDesc = await compressAllBase64InText(finalDesc);
+      }
+      if (finalImageUrl.startsWith('data:image/')) {
+        finalImageUrl = await compressBase64Image(finalImageUrl, 900, 0.72);
+      }
+
       const docRef = doc(db, 'past_spoilers', id);
       await setDoc(docRef, {
         id,
         title,
-        description: desc,
-        imageUrl: imageUrl || '',
+        description: finalDesc,
+        imageUrl: finalImageUrl,
         admin_secret: "pkxd2026_super_secret_admin_key"
       }, { merge: true });
       
