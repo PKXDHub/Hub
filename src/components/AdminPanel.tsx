@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler, AppComment, GeneratedPromoCode } from '../types';
+import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler, AppComment, GeneratedPromoCode, Poll } from '../types';
 import { 
   PlusCircle, Save, Sparkles, RefreshCw, X, Image, ExternalLink, Video, 
   Smartphone, BookOpen, Clock, Wand2, Loader2, Play, BellRing, AlertTriangle, Globe,
-  UserCheck, Trash2, CheckCircle, ShieldAlert, Check, MessageSquare
+  UserCheck, Trash2, CheckCircle, ShieldAlert, Check, MessageSquare, BarChart3
 } from 'lucide-react';
 import { playTapSound, playSuccessSound } from '../utils/audio';
 import { auth, db } from '../firebase';
@@ -57,7 +57,7 @@ interface AdminPanelProps {
   onUpdateGiftCountdown?: (title: string, date: string, enabled: boolean, content: string) => void;
 }
 
-type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'giftcountdown' | 'push' | 'logo' | 'applications' | 'moderation' | 'promocodes';
+type TabType = 'news' | 'spoiler' | 'featured' | 'theories' | 'shorts' | 'extratimer' | 'giftcountdown' | 'push' | 'logo' | 'applications' | 'moderation' | 'promocodes' | 'polls';
 
 // Helper to parse standard **bold** markers into strong tags for previews
 function parseBoldPreviewText(inputText: string): React.ReactNode {
@@ -237,6 +237,13 @@ export default function AdminPanel({
   const [allComments, setAllComments] = useState<AppComment[]>([]);
   const [modFilter, setModFilter] = useState<'all' | 'pending' | 'approved'>('pending');
 
+  // Polls admin states
+  const [adminPolls, setAdminPolls] = useState<Poll[]>([]);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollIsActive, setPollIsActive] = useState(true);
+  const [pollSubmitLoading, setPollSubmitLoading] = useState(false);
+
   // Push / Delay notification states
   const [delayActive, setDelayActive] = useState(isDelayed);
   const [delayMsgText, setDelayMsgText] = useState(delayMessage || 'Hoje o spoiler foi adiado devido a melhorias visuais. Contamos com a paciência de vocês!');
@@ -400,6 +407,31 @@ export default function AdminPanel({
         setGeneratedCodes(list);
       }, (error) => {
         console.error("Error loading generated codes in admin:", error);
+      });
+      return () => unsubscribe();
+    }
+  }, [activeTab, isOpen]);
+
+  useEffect(() => {
+    if (activeTab === 'polls' && isOpen) {
+      const pollsRef = collection(db, 'polls');
+      const q = query(pollsRef, orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const list: Poll[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          list.push({
+            id: docSnap.id,
+            question: data.question || '',
+            options: data.options || [],
+            createdAt: data.createdAt || Date.now(),
+            isActive: data.isActive !== false,
+            totalVotes: data.totalVotes || 0,
+          });
+        });
+        setAdminPolls(list);
+      }, (error) => {
+        console.error("Error loading admin polls:", error);
       });
       return () => unsubscribe();
     }
@@ -1325,6 +1357,104 @@ export default function AdminPanel({
     }
   };
 
+  const handleCreatePoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanQuestion = pollQuestion.trim();
+    if (!cleanQuestion) {
+      alert("⚠️ Por favor, digite uma pergunta para a enquete!");
+      return;
+    }
+
+    const cleanOpts = pollOptions.map(opt => opt.trim()).filter(opt => opt !== '');
+    if (cleanOpts.length < 2) {
+      alert("⚠️ Por favor, preencha pelo menos duas opções de resposta!");
+      return;
+    }
+
+    setPollSubmitLoading(true);
+    playTapSound();
+
+    try {
+      // If we are setting this poll as active, deactivate other active polls to keep the UI clean
+      if (pollIsActive) {
+        const activePollsSnapshot = adminPolls.filter(p => p.isActive);
+        for (const activePoll of activePollsSnapshot) {
+          const pollRef = doc(db, 'polls', activePoll.id);
+          await setDoc(pollRef, { isActive: false }, { merge: true });
+        }
+      }
+
+      const pollId = 'poll_' + Date.now();
+      const pollRef = doc(db, 'polls', pollId);
+      const optionsArray = cleanOpts.map((opt, index) => ({
+        id: `opt_${index}_${Date.now()}`,
+        text: opt,
+        votes: 0
+      }));
+
+      await setDoc(pollRef, {
+        id: pollId,
+        question: cleanQuestion,
+        options: optionsArray,
+        createdAt: Date.now(),
+        isActive: pollIsActive,
+        totalVotes: 0,
+        admin_secret: "pkxd2026_super_secret_admin_key"
+      });
+
+      showStatus('Enquete criada e publicada com sucesso! 📊');
+      playSuccessSound();
+
+      // Reset state
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollIsActive(true);
+    } catch (err: any) {
+      console.error("Erro ao criar enquete:", err);
+      alert("Erro ao salvar enquete: " + err.message);
+    } finally {
+      setPollSubmitLoading(false);
+    }
+  };
+
+  const handleTogglePollActive = async (pollId: string, currentStatus: boolean) => {
+    playTapSound();
+    try {
+      const pollRef = doc(db, 'polls', pollId);
+      
+      // If deactivating, simple toggle. If activating, deactivate other active polls first!
+      if (!currentStatus) {
+        const activePollsSnapshot = adminPolls.filter(p => p.isActive);
+        for (const activePoll of activePollsSnapshot) {
+          const otherRef = doc(db, 'polls', activePoll.id);
+          await setDoc(otherRef, { isActive: false }, { merge: true });
+        }
+      }
+
+      await setDoc(pollRef, { isActive: !currentStatus }, { merge: true });
+      showStatus('Status da enquete atualizado! 📊');
+      playSuccessSound();
+    } catch (err: any) {
+      console.error("Erro ao alterar status da enquete:", err);
+      alert("Erro ao alterar status: " + err.message);
+    }
+  };
+
+  const handleDeletePoll = async (pollId: string) => {
+    playTapSound();
+    if (!confirm("Deseja deletar permanentemente esta enquete? Todos os votos serão perdidos!")) {
+      return;
+    }
+    try {
+      await deleteDocSecurely('polls', pollId);
+      showStatus('Enquete excluída com sucesso! 🗑️');
+      playSuccessSound();
+    } catch (err: any) {
+      console.error("Erro ao deletar enquete:", err);
+      alert("Erro ao deletar: " + err.message);
+    }
+  };
+
   const showStatus = (msg: string) => {
     setStatusMsg(msg);
     setTimeout(() => setStatusMsg(''), 4000);
@@ -1730,6 +1860,20 @@ export default function AdminPanel({
                   {generatedCodes.length > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 bg-amber-550 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center justify-center">
                       {generatedCodes.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { playTapSound(); setActiveTab('polls'); }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all uppercase cursor-pointer relative ${
+                    activeTab === 'polls' ? 'bg-pink-600 text-white font-black' : 'bg-zinc-900 text-gray-300'
+                  }`}
+                >
+                  📊 Enquetes
+                  {adminPolls.length > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center justify-center">
+                      {adminPolls.length}
                     </span>
                   )}
                 </button>
@@ -3844,6 +3988,192 @@ export default function AdminPanel({
                         })}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Gerenciar Enquetes (Polls Administrator) */}
+          {activeTab === 'polls' && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-white/5 pb-3">
+                <h4 className="font-sans font-black text-sm uppercase text-cyan-400 flex items-center gap-1.5">
+                  <BarChart3 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                  <span>📊 Enquetes sobre Atualizações</span>
+                </h4>
+                <p className="text-[11px] text-gray-400 font-sans leading-relaxed">
+                  Crie e publique enquetes interativas para engajar o fã-clube e coletar votos em tempo real sobre futuras atualizações, itens desejados ou novos spoilers do PK XD!
+                </p>
+              </div>
+
+              {/* Form to create poll */}
+              <form onSubmit={handleCreatePoll} className="bg-zinc-950/40 border border-white/5 p-4 rounded-2xl space-y-4">
+                <h5 className="text-xs font-black uppercase text-gray-200">Nova Enquete</h5>
+                
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Pergunta da Enquete *</label>
+                    <input 
+                      type="text" 
+                      value={pollQuestion} 
+                      onChange={(e) => setPollQuestion(e.target.value)} 
+                      placeholder="Ex: Qual dessas novas armaduras é a sua favorita para a atualização de Páscoa?"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 font-sans"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Opções de Resposta * (mínimo 2)</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {pollOptions.map((option, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-gray-500 font-mono">#{idx + 1}</span>
+                          <input 
+                            type="text" 
+                            value={option} 
+                            onChange={(e) => {
+                              const newOpts = [...pollOptions];
+                              newOpts[idx] = e.target.value;
+                              setPollOptions(newOpts);
+                            }} 
+                            placeholder={`Ex: Opção ${idx + 1}`}
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                            required={idx < 2}
+                          />
+                          {pollOptions.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playTapSound();
+                                setPollOptions(pollOptions.filter((_, i) => i !== idx));
+                              }}
+                              className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playTapSound();
+                          setPollOptions([...pollOptions, '']);
+                        }}
+                        className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-gray-300 font-sans font-bold text-[10px] uppercase rounded-lg border border-zinc-800 cursor-pointer flex items-center gap-1 transition-colors"
+                      >
+                        <PlusCircle className="w-3 h-3 text-cyan-400" />
+                        <span>Adicionar Opção</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Toggle Active status */}
+                  <div className="flex items-center gap-3 pt-2 bg-black/10 p-3 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => { playTapSound(); setPollIsActive(!pollIsActive); }}>
+                      <div className={`w-9 h-5 rounded-full p-0.5 transition-all duration-200 ${pollIsActive ? 'bg-cyan-500' : 'bg-zinc-800'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 transform ${pollIsActive ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                      <span className="text-xs font-bold text-gray-300">Publicar como Ativa (Desativa outras enquetes ativas)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={pollSubmitLoading}
+                  className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-700 text-white font-sans font-black uppercase text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all duration-200 active:scale-95 shadow-md border border-white/10"
+                >
+                  {pollSubmitLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Criando Enquete...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Salvar na Coleção 'polls' ✨</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Polls list */}
+              <div className="space-y-4">
+                <h5 className="text-xs font-black uppercase text-gray-300 flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Enquetes Existentes</span>
+                </h5>
+
+                {adminPolls.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed border-white/5 bg-black/10 rounded-2xl text-gray-500 text-xs font-bold uppercase">
+                    Nenhuma enquete cadastrada. Crie uma acima!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {adminPolls.map((poll) => (
+                      <div 
+                        key={poll.id} 
+                        className="bg-zinc-950/40 border border-white/5 p-4.5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-white/10 transition-colors"
+                      >
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[9px] font-sans font-black uppercase px-2 py-0.5 rounded-md ${
+                              poll.isActive 
+                                ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400' 
+                                : 'bg-zinc-800 border border-zinc-700 text-zinc-400'
+                            }`}>
+                              {poll.isActive ? 'Ativa' : 'Encerrada'}
+                            </span>
+                            <span className="text-[10px] font-mono text-gray-500">
+                              {poll.totalVotes} votos registrados
+                            </span>
+                          </div>
+                          
+                          <h6 className="font-sans font-black text-sm text-white">
+                            {poll.question}
+                          </h6>
+
+                          {/* Options results overview */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                            {poll.options.map((opt) => (
+                              <div key={opt.id} className="bg-black/20 px-2.5 py-1.5 rounded-lg border border-white/5 text-[10px]">
+                                <span className="text-gray-400 block truncate font-sans font-semibold">{opt.text}</span>
+                                <span className="font-mono text-cyan-400 font-bold">{opt.votes || 0} votos</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end md:self-center">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePollActive(poll.id, poll.isActive)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border ${
+                              poll.isActive
+                                ? 'bg-zinc-900 border-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-800'
+                                : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20'
+                            }`}
+                          >
+                            {poll.isActive ? 'Encerrar' : 'Ativar'}
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePoll(poll.id)}
+                            className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 cursor-pointer flex items-center justify-center transition-all active:scale-90"
+                            title="Deletar Enquete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

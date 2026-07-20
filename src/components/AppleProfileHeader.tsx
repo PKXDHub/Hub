@@ -11,6 +11,7 @@ import {
   query, orderBy, limit, getDocs, getDoc, where
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useLanguage } from '../utils/LanguageContext';
 
 interface AppleProfileHeaderProps {
   user: any;
@@ -43,6 +44,7 @@ export default function AppleProfileHeader({
   setShowAdminPanel,
   isAdmin
 }: AppleProfileHeaderProps) {
+  const { t, language, setLanguage } = useLanguage();
   // Theme state: fixed to dark for the pristine Apple purple vibe, non-switchable
   const themeMode = 'dark';
 
@@ -653,10 +655,35 @@ export default function AppleProfileHeader({
           </button>
         </div>
 
-        {/* Center: System Status */}
-        <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>PKXD Central • Glass UI v2.5</span>
+        {/* Center: Language Switcher (Responsive) */}
+        <div className="flex items-center gap-1 bg-neutral-900/60 border border-neutral-800/40 rounded-full p-1 self-center">
+          <button
+            type="button"
+            onClick={() => { triggerAudio('tap'); setLanguage('pt'); }}
+            className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase transition-all duration-150 flex items-center gap-1 cursor-pointer ${language === 'pt' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg border border-purple-400/30' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/20'}`}
+            title="Mudar idioma para Português (Brasil)"
+          >
+            <span>🇧🇷</span>
+            <span className="hidden md:inline">PT-BR</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { triggerAudio('tap'); setLanguage('en'); }}
+            className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase transition-all duration-150 flex items-center gap-1 cursor-pointer ${language === 'en' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg border border-purple-400/30' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/20'}`}
+            title="Switch language to English"
+          >
+            <span>🇺🇸</span>
+            <span className="hidden md:inline">EN</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { triggerAudio('tap'); setLanguage('es'); }}
+            className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase transition-all duration-150 flex items-center gap-1 cursor-pointer ${language === 'es' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg border border-purple-400/30' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/20'}`}
+            title="Cambiar idioma a Español"
+          >
+            <span>🇪🇸</span>
+            <span className="hidden md:inline">ES</span>
+          </button>
         </div>
 
         {/* Right: Currency Indicator Box */}
