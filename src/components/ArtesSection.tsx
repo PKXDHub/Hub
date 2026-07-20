@@ -84,6 +84,7 @@ export default function ArtesSection({ isAdmin, triggerAudio, soundEnabled }: Ar
   const [newCategory, setNewCategory] = useState("Renders");
   const [isCustomCat, setIsCustomCat] = useState(false);
   const [customCategory, setCustomCategory] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Show a temporal alert toast inside this section
   const showToast = (msg: string, type: 'success' | 'info' = 'success') => {
@@ -92,6 +93,69 @@ export default function ArtesSection({ isAdmin, triggerAudio, soundEnabled }: Ar
     setTimeout(() => {
       setNotif(null);
     }, 3500);
+  };
+
+  // Process and compress file uploads directly from phone/device
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('⚠️ Por favor, selecione um arquivo de imagem válido!');
+      return;
+    }
+
+    setUploadingImage(true);
+    triggerAudio('tap');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Compress the image (max 900px wide or tall)
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 900;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // High efficiency compressed JPEG representation (~60KB to 150KB, fully safe for Firestore)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          setNewImgUrl(compressedBase64);
+          if (!newDownloadUrl) {
+            setNewDownloadUrl(compressedBase64);
+          }
+          showToast("📸 Imagem do seu celular carregada e compactada com sucesso!", "success");
+          triggerAudio('success');
+        }
+        setUploadingImage(false);
+      };
+      img.onerror = () => {
+        alert('⚠️ Falha ao processar a imagem do aparelho.');
+        setUploadingImage(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      alert('⚠️ Erro ao ler arquivo do celular.');
+      setUploadingImage(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Listen to Firestore real-time updates for art_assets
@@ -490,26 +554,106 @@ export default function ArtesSection({ isAdmin, triggerAudio, soundEnabled }: Ar
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold uppercase text-neutral-400">Link da Imagem (Visualização)</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://exemplo.com/imagem.png"
-                  value={newImgUrl}
-                  onChange={(e) => setNewImgUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-pink-500"
-                />
+              {/* Image Input choice */}
+              <div className="space-y-2 border border-white/5 bg-black/20 p-3 rounded-2xl text-left">
+                <label className="block text-[10px] font-extrabold uppercase text-neutral-400">
+                  Imagem da Arte 🖼️
+                </label>
+                
+                <div className="space-y-3">
+                  {/* Upload from cellphone button */}
+                  <div className="flex items-center gap-2">
+                    <label className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 cursor-pointer hover:bg-white/5 hover:border-pink-500/50 transition-all ${newImgUrl.startsWith('data:') ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-white/10'}`}>
+                      <span className={`text-[11px] font-black uppercase text-center mt-0.5 ${newImgUrl.startsWith('data:') ? 'text-emerald-400' : 'text-pink-400'}`}>
+                        {newImgUrl.startsWith('data:') ? '✓ Imagem Selecionada!' : '📱 Selecionar do Celular / Upar Foto'}
+                      </span>
+                      <span className="text-[9px] text-gray-400 text-center mt-0.5">
+                        {newImgUrl.startsWith('data:') ? 'Foto do celular carregada!' : 'Toque para escolher da galeria'}
+                      </span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
+
+                  {/* Loading spinner */}
+                  {uploadingImage && (
+                    <div className="flex items-center justify-center gap-2 py-1">
+                      <div className="w-4 h-4 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[10px] font-mono text-pink-400 uppercase tracking-widest animate-pulse">Processando foto...</span>
+                    </div>
+                  )}
+
+                  {/* Preview Thumbnail if selected */}
+                  {newImgUrl && (
+                    <div className="relative rounded-xl overflow-hidden bg-black/40 border border-white/5 aspect-video flex items-center justify-center p-1">
+                      <img 
+                        src={newImgUrl} 
+                        alt="Preview" 
+                        className="max-h-24 rounded-lg object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          triggerAudio('tap');
+                          setNewImgUrl("");
+                          if (newDownloadUrl.startsWith('data:')) {
+                            setNewDownloadUrl("");
+                          }
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all cursor-pointer shadow-md"
+                        title="Remover Imagem"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Or Manual URL input toggle */}
+                  <div className="relative pt-1">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[9px] text-zinc-500 font-bold uppercase">Ou usar link de internet (URL)</span>
+                      {newImgUrl.startsWith('data:') && (
+                        <span className="text-[9px] text-emerald-400 font-bold uppercase">✓ Usando arquivo local</span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="https://exemplo.com/imagem.png"
+                      value={newImgUrl.startsWith('data:') ? '[Imagem do Aparelho]' : newImgUrl}
+                      disabled={newImgUrl.startsWith('data:')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val !== '[Imagem do Aparelho]') {
+                          setNewImgUrl(val);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-pink-500 font-semibold disabled:opacity-45"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold uppercase text-neutral-400">Link de Download Oficial (Opcional - se vazio usa imagem de visualização)</label>
+              <div className="space-y-1 text-left">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-extrabold uppercase text-neutral-400">Link de Download Oficial (Opcional)</label>
+                  <span className="text-[8px] text-zinc-500 font-bold uppercase">Deixe em branco para usar a mesma imagem</span>
+                </div>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="https://exemplo.com/imagem-hd.png"
-                  value={newDownloadUrl}
-                  onChange={(e) => setNewDownloadUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-pink-500"
+                  value={newDownloadUrl.startsWith('data:') ? '[Imagem do Aparelho]' : newDownloadUrl}
+                  disabled={newDownloadUrl.startsWith('data:')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val !== '[Imagem do Aparelho]') {
+                      setNewDownloadUrl(val);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-pink-500 disabled:opacity-45"
                 />
               </div>
 
