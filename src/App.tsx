@@ -4,6 +4,7 @@ import { NewsItem, FeaturedVideo, Theory, ShortItem, PastSpoiler, AppNotificatio
 import CountdownWidget from './components/CountdownWidget';
 import GiftCountdown from './components/GiftCountdown';
 import WhatsAppPromo from './components/WhatsAppPromo';
+import PartnerChannelPromo from './components/PartnerChannelPromo';
 import AdminPanel from './components/AdminPanel';
 import PromoCodeRedeemer from './components/PromoCodeRedeemer';
 import FeaturedVideos from './components/FeaturedVideos';
@@ -3071,6 +3072,9 @@ export default function App() {
 
                       {/* WhatsApp Channel Promo Feature banner */}
                       <WhatsAppPromo channelUrl={WHATSAPP_CHANNEL_URL} onAddXP={handleAddFanXP} />
+
+                      {/* Official Partner Channel Area - Alertas PK XD */}
+                      <PartnerChannelPromo onAddXP={handleAddFanXP} />
                     </>
                   );
                 })()}
