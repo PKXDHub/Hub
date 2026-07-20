@@ -191,6 +191,25 @@ app.post("/api/send-push", async (req, res) => {
     res.status(500).json({ error: err.message || "Erro interno ao disparar push" });
   }
 });
+app.post("/api/admin-delete", async (req, res) => {
+  const { collectionName, docId, admin_secret } = req.body;
+  if (admin_secret !== "pkxd2026_super_secret_admin_key") {
+    res.status(401).json({ error: "Acesso administrativo negado." });
+    return;
+  }
+  if (!collectionName || !docId) {
+    res.status(400).json({ error: "Par\xE2metros collectionName e docId s\xE3o obrigat\xF3rios." });
+    return;
+  }
+  try {
+    console.log(`[Admin DB] Deletando documento ${docId} da cole\xE7\xE3o ${collectionName}`);
+    await adminDb.collection(collectionName).doc(docId).delete();
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Admin DB] Erro ao deletar documento:", err);
+    res.status(500).json({ error: err.message || "Erro interno ao deletar" });
+  }
+});
 var aiClient = null;
 function getAI() {
   if (!aiClient) {
