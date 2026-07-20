@@ -17,7 +17,6 @@ import MissionsSection from './components/MissionsSection';
 import AppleProfileHeader from './components/AppleProfileHeader';
 import ArtesSection from './components/ArtesSection';
 import PollsSection from './components/PollsSection';
-import { useLanguage } from './utils/LanguageContext';
 import { 
   Sparkles, 
   Settings, 
@@ -64,7 +63,6 @@ export const maskEmail = (email?: string | null): string => {
 };
 
 export default function App() {
-  const { t, language, setLanguage } = useLanguage();
   const [newsList, setNewsList] = useState<NewsItem[]>(() => {
     try {
       const saved = localStorage.getItem('pkxd_central_news');
@@ -2867,7 +2865,7 @@ export default function App() {
                 }`}
               >
                 <span>🏠</span>
-                <span>{language === 'en' ? 'Home' : language === 'es' ? 'Inicio' : 'Início'}</span>
+                <span>Início</span>
               </button>
               
               <button
@@ -2882,7 +2880,7 @@ export default function App() {
                 }`}
               >
                 <span>👥</span>
-                <span>{language === 'en' ? 'Community' : language === 'es' ? 'Comunidad' : 'Mural'}</span>
+                <span>Mural</span>
               </button>
 
               <button
@@ -2897,7 +2895,7 @@ export default function App() {
                 }`}
               >
                 <span>🎯</span>
-                <span>{t('tab_missions')}</span>
+                <span>Missões</span>
               </button>
 
               <button
@@ -2912,7 +2910,7 @@ export default function App() {
                 }`}
               >
                 <span>🎨</span>
-                <span>{language === 'en' ? 'Art' : language === 'es' ? 'Artes' : 'Artes'}</span>
+                <span>Artes</span>
               </button>
             </div>
 
