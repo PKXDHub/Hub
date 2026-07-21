@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, doc, onSnapshot, query, orderBy, updateDoc, increment } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Poll, PollOption } from '../types';
 import { playTapSound, playSuccessSound } from '../utils/audio';
 import { motion, AnimatePresence } from 'motion/react';
-import { BarChart3, Vote, AlertCircle, CheckCircle2, History } from 'lucide-react';
+import { BarChart3, Vote, AlertCircle, CheckCircle2, History, PlusCircle, X, Send, Sparkles, Plus, Loader2 } from 'lucide-react';
 
 interface PollsSectionProps {
   onAddXP: (amount: number, reason: string) => void;
@@ -17,6 +17,14 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
   const [votedPolls, setVotedPolls] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [votingStatus, setVotingStatus] = useState<Record<string, 'idle' | 'voting' | 'success' | 'error'>>({});
+
+  // Poll Creation Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newOptions, setNewOptions] = useState<string[]>(['', '']);
+  const [isSubmittingPoll, setIsSubmittingPoll] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
 
   // Load voted polls from localStorage
   useEffect(() => {
@@ -35,10 +43,10 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
     const q = query(collection(db, 'polls'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const loadedPolls: Poll[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         loadedPolls.push({
-          id: doc.id,
+          id: docSnap.id,
           question: data.question || '',
           options: data.options || [],
           createdAt: data.createdAt || Date.now(),
@@ -75,7 +83,7 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
     try {
       const pollRef = doc(db, 'polls', pollId);
       const poll = polls.find(p => p.id === pollId);
-      if (!poll) throw new Error("Poll not found");
+      if (!poll) throw new Error("Enquete não encontrada!");
 
       // Build updated options list incrementing the specific option's votes
       const updatedOptions = poll.options.map((opt) => {
@@ -100,15 +108,126 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
 
       // Give 50 XP reward to fan!
       onAddXP(50, 'Votou na Enquete de Atualização! 📊');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error casting vote:", err);
       setVotingStatus(prev => ({ ...prev, [pollId]: 'error' }));
+      alert("Não foi possível registrar o voto no momento. Tente novamente! (" + (err?.message || err) + ")");
     }
   };
 
   const handleSelectOption = (pollId: string, optionId: string) => {
     playTapSound();
     setSelectedOptions(prev => ({ ...prev, [pollId]: optionId }));
+  };
+
+  const handleAddOptionField = () => {
+    if (newOptions.length >= 6) {
+      alert("⚠️ Máximo de 6 opções por enquete!");
+      return;
+    }
+    playTapSound();
+    setNewOptions(prev => [...prev, '']);
+  };
+
+  const handleRemoveOptionField = (index: number) => {
+    if (newOptions.length <= 2) {
+      alert("⚠️ A enquete precisa de no mínimo 2 opções!");
+      return;
+    }
+    playTapSound();
+    setNewOptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCreateOrSuggestPoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalError(null);
+    setModalSuccess(null);
+
+    const cleanQ = newQuestion.trim();
+    if (!cleanQ) {
+      setModalError("⚠️ Por favor, digite a pergunta da enquete!");
+      return;
+    }
+
+    const cleanOpts = newOptions.map(o => o.trim()).filter(o => o !== '');
+    if (cleanOpts.length < 2) {
+      setModalError("⚠️ Por favor, preencha pelo menos duas opções de resposta!");
+      return;
+    }
+
+    setIsSubmittingPoll(true);
+    playTapSound();
+
+    try {
+      if (isAdmin) {
+        // Admin creates live poll directly in Firestore
+        // Deactivate old active polls first
+        const activePollsSnapshot = polls.filter(p => p.isActive);
+        for (const activePoll of activePollsSnapshot) {
+          const pRef = doc(db, 'polls', activePoll.id);
+          try {
+            await updateDoc(pRef, { isActive: false });
+          } catch (e) {
+            await setDoc(pRef, { isActive: false }, { merge: true });
+          }
+        }
+
+        const pollId = 'poll_' + Date.now();
+        const pollRef = doc(db, 'polls', pollId);
+        const optionsArray = cleanOpts.map((opt, idx) => ({
+          id: `opt_${idx}_${Date.now()}`,
+          text: opt,
+          votes: 0
+        }));
+
+        await setDoc(pollRef, {
+          id: pollId,
+          question: cleanQ,
+          options: optionsArray,
+          createdAt: Date.now(),
+          isActive: true,
+          totalVotes: 0,
+          admin_secret: "pkxd2026_super_secret_admin_key"
+        });
+
+        playSuccessSound();
+        onAddXP(100, 'Criou uma nova Enquete Oficial! 📊');
+        setModalSuccess("🎉 Enquete criada e publicada com sucesso no fã-clube!");
+        setTimeout(() => {
+          setShowCreateModal(false);
+          setNewQuestion('');
+          setNewOptions(['', '']);
+          setModalSuccess(null);
+        }, 1800);
+      } else {
+        // Regular fan submits a suggested poll
+        const suggestionId = 'sug_poll_' + Date.now();
+        const sugRef = doc(db, 'suggested_polls', suggestionId);
+        await setDoc(sugRef, {
+          id: suggestionId,
+          question: cleanQ,
+          options: cleanOpts,
+          createdAt: Date.now(),
+          authorName: localStorage.getItem('pkxd_nickname') || 'Fã Anonimo',
+          status: 'pending'
+        });
+
+        playSuccessSound();
+        onAddXP(30, 'Sugeriu uma Enquete para o Fã-Clube! 🔮');
+        setModalSuccess("🚀 Sua sugestão de enquete foi enviada para a Administração! Obrigado!");
+        setTimeout(() => {
+          setShowCreateModal(false);
+          setNewQuestion('');
+          setNewOptions(['', '']);
+          setModalSuccess(null);
+        }, 2200);
+      }
+    } catch (err: any) {
+      console.error("Erro ao salvar enquete:", err);
+      setModalError("❌ Ocorreu um erro ao salvar a enquete: " + (err?.message || String(err)));
+    } finally {
+      setIsSubmittingPoll(false);
+    }
   };
 
   // Helper to calculate percentage
@@ -136,25 +255,53 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/5 rounded-full filter blur-2xl pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-        <div className="p-2.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-2xl">
-          <BarChart3 className="w-5 h-5 text-cyan-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-2xl">
+            <BarChart3 className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase flex items-center gap-2">
+              Enquetes e Opiniões
+            </h3>
+            <p className="font-sans text-xs text-cyan-200">
+              Dê o seu voto, expresse a sua opinião e decida as melhores ideias para o PK XD com o resto dos fãs! 🚀
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-sans font-black text-xl tracking-tight text-white uppercase flex items-center gap-2">
-            Enquetes e Opiniões
-          </h3>
-          <p className="font-sans text-xs text-cyan-200">
-            Dê o seu voto, expresse a sua opinião e decida as melhores ideias para o PK XD com o resto dos fãs! 🚀
-          </p>
-        </div>
+
+        {/* Button to Create or Suggest Poll */}
+        <button
+          type="button"
+          onClick={() => {
+            playTapSound();
+            setShowCreateModal(true);
+            setModalError(null);
+            setModalSuccess(null);
+          }}
+          className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30 shrink-0"
+        >
+          <PlusCircle className="w-4 h-4 text-cyan-200" />
+          <span>{isAdmin ? '➕ Criar Nova Enquete' : '💡 Sugerir Enquete (+30 XP)'}</span>
+        </button>
       </div>
 
       {/* Active Polls Container */}
       <div className="space-y-6">
         {activePolls.length === 0 ? (
-          <div className="p-8 text-center text-zinc-500 bg-black/10 rounded-2xl border border-white/5 italic">
-            Nenhuma enquete ativa no momento. Volte em breve! 🔮
+          <div className="p-8 text-center text-zinc-400 bg-black/20 rounded-2xl border border-white/5 space-y-3">
+            <p className="italic text-xs">Nenhuma enquete ativa no momento. Seja o primeiro a sugerir ou criar uma!</p>
+            <button
+              type="button"
+              onClick={() => {
+                playTapSound();
+                setShowCreateModal(true);
+              }}
+              className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isAdmin ? 'Criar Enquete Agora' : 'Sugerir Ideia de Enquete'}</span>
+            </button>
           </div>
         ) : (
           activePolls.map((poll) => {
@@ -226,7 +373,7 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
                               onClick={() => handleSelectOption(poll.id, option.id)}
                               className={`w-full p-3.5 rounded-xl text-left text-xs font-sans font-bold flex items-center gap-3 transition-all duration-150 border cursor-pointer select-none ${
                                 isSelected
-                                  ? 'bg-cyan-500/10 border-cyan-400 text-cyan-350 shadow-md scale-[1.01]'
+                                  ? 'bg-cyan-500/10 border-cyan-400 text-cyan-300 shadow-md scale-[1.01]'
                                   : 'bg-zinc-950/40 border-white/5 text-zinc-400 hover:border-white/10 hover:bg-zinc-950/60'
                               }`}
                             >
@@ -322,6 +469,152 @@ export default function PollsSection({ onAddXP, isAdmin }: PollsSectionProps) {
           </div>
         </div>
       )}
+
+      {/* MODAL DE CRIAR OU SUGERIR ENQUETE */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-zinc-900 border border-cyan-500/30 rounded-3xl p-6 sm:p-7 max-w-lg w-full space-y-5 text-left shadow-2xl relative overflow-hidden"
+            >
+              {/* Header Modal */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  <h3 className="font-sans font-black text-lg text-white uppercase tracking-tight">
+                    {isAdmin ? 'Criar Nova Enquete Oficial' : 'Sugerir Enquete para o Fã-Clube'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    setShowCreateModal(false);
+                  }}
+                  className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form Modal */}
+              <form onSubmit={handleCreateOrSuggestPoll} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-cyan-300 mb-1.5">
+                    Pergunta da Enquete *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Qual dessas novas roupas você quer na próxima atualização?"
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-cyan-300">
+                      Opções de Resposta * (no mínimo 2)
+                    </label>
+                    <span className="text-[10px] font-mono text-zinc-400">
+                      {newOptions.length}/6 opções
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {newOptions.map((opt, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-zinc-500 font-mono">#{idx + 1}</span>
+                        <input
+                          type="text"
+                          required={idx < 2}
+                          placeholder={`Opção ${idx + 1}`}
+                          value={opt}
+                          onChange={(e) => {
+                            const updated = [...newOptions];
+                            updated[idx] = e.target.value;
+                            setNewOptions(updated);
+                          }}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-400"
+                        />
+                        {newOptions.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOptionField(idx)}
+                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {newOptions.length < 6 && (
+                    <button
+                      type="button"
+                      onClick={handleAddOptionField}
+                      className="mt-1 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-cyan-300 border border-cyan-500/20 text-[11px] font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Outra Opção</span>
+                    </button>
+                  )}
+                </div>
+
+                {modalError && (
+                  <p className="text-xs text-red-400 bg-red-950/30 border border-red-500/20 p-3 rounded-xl font-sans">
+                    {modalError}
+                  </p>
+                )}
+
+                {modalSuccess && (
+                  <p className="text-xs text-emerald-300 bg-emerald-950/30 border border-emerald-500/20 p-3 rounded-xl font-sans font-bold">
+                    {modalSuccess}
+                  </p>
+                )}
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      setShowCreateModal(false);
+                    }}
+                    className="px-4 py-2.5 text-xs font-bold text-zinc-400 hover:text-white rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingPoll}
+                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    {isSubmittingPoll ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>{isAdmin ? 'Publicar Enquete Oficial! 🚀' : 'Enviar Sugestão (+30 XP) 🔮'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
+

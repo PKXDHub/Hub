@@ -1380,7 +1380,13 @@ export default function AdminPanel({
         const activePollsSnapshot = adminPolls.filter(p => p.isActive);
         for (const activePoll of activePollsSnapshot) {
           const pollRef = doc(db, 'polls', activePoll.id);
-          await setDoc(pollRef, { isActive: false }, { merge: true });
+          try {
+            await updateDoc(pollRef, { isActive: false });
+          } catch (e) {
+            try {
+              await setDoc(pollRef, { isActive: false }, { merge: true });
+            } catch (ignored) {}
+          }
         }
       }
 
